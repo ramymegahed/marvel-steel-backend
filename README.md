@@ -85,6 +85,13 @@ Once the containers are running, generate the database tables inside your Postgr
 docker-compose exec web alembic upgrade head
 ```
 
+### 5. Create Initial Super Admin
+To access the protected Admin API endpoints, you need an initial Super Admin account. Run the setup script to create one:
+```bash
+docker-compose exec web python create_superuser.py
+```
+*(Enter your desired email and password when prompted).*
+
 ---
 
 ## 📚 API Documentation
