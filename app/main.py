@@ -1,4 +1,8 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from app.database import SessionLocal, engine
+from app.models.admin import Admin
+from app.core.security import get_password_hash
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -22,10 +26,40 @@ from app.routers.public import products as public_products
 from app.routers.public import orders as public_orders
 from app.routers.public import reviews as public_reviews
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure models are created in DB if not already
+    Admin.metadata.create_all(bind=engine)
+    
+    db = SessionLocal()
+    try:
+        # Check if any admin exists
+        if db.query(Admin).count() == 0:
+            print("No admins found in database. Creating default Super Admin...")
+            default_email = "admin@marvelsteel.com"
+            default_password = "Admin123456"
+            hashed_password = get_password_hash(default_password)
+            new_admin = Admin(
+                email=default_email,
+                hashed_password=hashed_password,
+                role="super_admin"
+            )
+            db.add(new_admin)
+            db.commit()
+            print(f"Successfully created default Super Admin: {default_email}")
+    except Exception as e:
+        print(f"Failed to create default Super Admin on startup: {e}")
+        db.rollback()
+    finally:
+        db.close()
+    
+    yield
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Backend API for Marvel Steel MVP",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Set all CORS enabled origins
