@@ -109,7 +109,7 @@ FastAPI automatically generates interactive API documentation. Once your Docker 
 The backend relies on several core relational models:
 
 - **Admin Base:** Stores `email`, bcrypt `hashed_password`, and `role` (`super_admin` or `staff`).
-- **Category:** Groups products. Tracks `name` and `is_active` status.
+- **Category:** Groups products. Tracks `name`, `description`, `image_url`, and `is_active` status. Note: creating or updating an image must be done via `multipart/form-data`.
 - **Product:** The core furniture item. Links to a Category. Includes `description`, `materials`.
 - **ProductImage:** Multiple image URLs linked to a specific Product. Specifies if an image `is_main`.
 - **ProductSize:** Variations of a product. Tracks `size label`, `additional_price`, and `stock_quantity`.

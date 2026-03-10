@@ -25,6 +25,11 @@ def update_category(db: Session, category_id: int, category_in: CategoryUpdate):
     if not db_obj:
         raise HTTPException(status_code=404, detail="Category not found")
     update_data = category_in.model_dump(exclude_unset=True)
+    
+    # If a new image is provided, delete the old one
+    if "image_url" in update_data and db_obj.image_url and update_data["image_url"] != db_obj.image_url:
+        delete_file(db_obj.image_url)
+
     for field, value in update_data.items():
         setattr(db_obj, field, value)
     db.commit()
@@ -35,6 +40,10 @@ def delete_category(db: Session, category_id: int):
     db_obj = db.query(Category).filter(Category.id == category_id).first()
     if not db_obj:
         raise HTTPException(status_code=404, detail="Category not found")
+        
+    if db_obj.image_url:
+        delete_file(db_obj.image_url)
+        
     db.delete(db_obj)
     db.commit()
     return {"message": "Category deleted"}

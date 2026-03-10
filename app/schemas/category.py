@@ -4,6 +4,8 @@ from typing import Optional
 
 class CategoryBase(BaseModel):
     name: str
+    description: Optional[str] = None
+    image_url: Optional[str] = None
     sort_order: Optional[int] = 0
     is_active: Optional[bool] = True
 
@@ -12,6 +14,8 @@ class CategoryCreate(CategoryBase):
 
 class CategoryUpdate(BaseModel):
     name: Optional[str] = None
+    description: Optional[str] = None
+    image_url: Optional[str] = None
     sort_order: Optional[int] = None
     is_active: Optional[bool] = None
 
