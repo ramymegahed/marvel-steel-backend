@@ -26,6 +26,8 @@ from app.routers.public import categories as public_categories
 from app.routers.public import products as public_products
 from app.routers.public import orders as public_orders
 from app.routers.public import reviews as public_reviews
+from app.routers.public import cart as public_cart
+from app.routers.public import checkout as public_checkout
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -93,6 +95,8 @@ app.include_router(public_categories.router, prefix="/categories", tags=["public
 app.include_router(public_products.router, prefix="/products", tags=["public_products"])
 app.include_router(public_orders.router, prefix="/orders", tags=["public_orders"])
 app.include_router(public_reviews.router, prefix="/reviews", tags=["public_reviews"])
+app.include_router(public_cart.router, prefix=f"{settings.API_V1_STR}/cart", tags=["public_cart"])
+app.include_router(public_checkout.router, prefix=f"{settings.API_V1_STR}/checkout", tags=["public_checkout"])
 
 @app.get("/")
 def read_root():
