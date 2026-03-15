@@ -67,7 +67,8 @@ app = FastAPI(
 
 # Set all CORS enabled origins
 origins = [
-    "http://localhost:5173"
+    "http://localhost:5173",
+    "https://marvel-steel-eight.vercel.app",
 ]
 
 app.add_middleware(
