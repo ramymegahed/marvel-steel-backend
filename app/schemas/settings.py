@@ -9,6 +9,9 @@ class ReviewBase(BaseModel):
 class ReviewCreate(ReviewBase):
     pass
 
+class ReviewUpdate(ReviewBase):
+    pass
+
 class ReviewResponse(ReviewBase):
     id: int
     created_at: datetime
