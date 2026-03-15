@@ -58,6 +58,11 @@ def update_admin(
     if not db_admin:
         raise HTTPException(status_code=404, detail="Admin not found")
         
+    if db_admin.role == "super_admin" and admin_in.role and admin_in.role != "super_admin":
+        super_admin_count = db.query(Admin).filter(Admin.role == "super_admin").count()
+        if super_admin_count <= 1:
+            raise HTTPException(status_code=400, detail="At least one super admin must exist in the system.")
+            
     update_data = admin_in.model_dump(exclude_unset=True)
     if "password" in update_data:
         hashed_password = get_password_hash(update_data["password"])
@@ -83,6 +88,11 @@ def delete_admin(
     if db_admin.id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot delete your own account")
         
+    if db_admin.role == "super_admin":
+        super_admin_count = db.query(Admin).filter(Admin.role == "super_admin").count()
+        if super_admin_count <= 1:
+            raise HTTPException(status_code=400, detail="At least one super admin must exist in the system.")
+            
     db.delete(db_admin)
     db.commit()
     return {"message": "Admin deleted successfully"}
