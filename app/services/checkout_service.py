@@ -32,7 +32,7 @@ def calculate_checkout(db: Session, cart_id: str) -> CheckoutCalculateResponse:
             if size.stock_quantity < item.quantity:
                  raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name} (Size: {size.name})")
             
-            item_price = size.additional_price
+            item_price = size.discount_price if size.discount_price is not None else size.price
 
         item_subtotal = item_price * item.quantity
         subtotal += item_subtotal
@@ -94,7 +94,7 @@ def confirm_checkout(db: Session, cart_id: str, checkout_in: CheckoutConfirm) ->
         
         if item.size_id:
             size = db.query(ProductSize).filter(ProductSize.id == item.size_id).first()
-            item_price = size.additional_price
+            item_price = size.discount_price if size.discount_price is not None else size.price
             
             # Deduct Stock
             size.stock_quantity -= item.quantity

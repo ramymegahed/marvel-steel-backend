@@ -1,0 +1,530 @@
+﻿alembic : Traceback 
+(most recent call 
+last):
+At line:1 char:103
++ ... s\activate; 
+alembic revision 
+--autogenerate -m 
+"update_product_size_p 
+...
++                 ~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (Traceback (mo   
+ st recent call las    
+t)::String) [], Re    
+moteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\base.py", line 
+143, in __init__
+    
+self._dbapi_connection 
+= 
+engine.raw_connection()
+                       
+      
+~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\base.py", line 
+3317, in raw_connection
+    return 
+self.pool.connect()
+           
+~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+448, in connect
+    return _ConnectionF
+airy._checkout(self)
+           ~~~~~~~~~~~~
+~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+1272, in _checkout
+    fairy = _Connection
+Record.checkout(pool)
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+712, in checkout
+    rec = 
+pool._do_get()
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\impl.py", line 
+306, in _do_get
+    return self._create
+_connection()
+           ~~~~~~~~~~~~
+~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+389, in 
+_create_connection
+    return 
+_ConnectionRecord(self)
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+674, in __init__
+    self.__connect()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+900, in __connect
+    with 
+util.safe_reraise():
+         
+~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\util\langhelpers.py", 
+line 121, in __exit__
+    raise exc_value.wit
+h_traceback(exc_tb)
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+896, in __connect
+    
+self.dbapi_connection 
+= connection = pool._in
+voke_creator(self)
+                       
+                  ~~~~~
+~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\create.py", 
+line 667, in connect
+    return dialect.conn
+ect(*cargs_tup, 
+**cparams)
+           ~~~~~~~~~~~~
+~~~^^^^^^^^^^^^^^^^^^^^
+^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\default.py", 
+line 630, in connect
+    return self.loaded_
+dbapi.connect(*cargs, 
+**cparams)  # type: 
+ignore[no-any-return]  
+# NOQA: E501
+           ~~~~~~~~~~~~
+~~~~~~~~~~~~~^^^^^^^^^^
+^^^^^^^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\psycopg2\_
+_init__.py", line 135, 
+in connect
+    conn = 
+_connect(dsn, connectio
+n_factory=connection_fa
+ctory, **kwasync)
+psycopg2.OperationalErr
+or: connection to 
+server at "localhost" 
+(::1), port 5432 
+failed: Connection 
+refused 
+(0x0000274D/10061)
+	Is the server running 
+on that host and 
+accepting TCP/IP 
+connections?
+connection to server 
+at "localhost" 
+(127.0.0.1), port 5432 
+failed: Connection 
+refused 
+(0x0000274D/10061)
+	Is the server running 
+on that host and 
+accepting TCP/IP 
+connections?
+
+
+The above exception 
+was the direct cause 
+of the following 
+exception:
+
+Traceback (most recent 
+call last):
+  File "<frozen 
+runpy>", line 198, in 
+_run_module_as_main
+  File "<frozen 
+runpy>", line 88, in 
+_run_code
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Scrip
+ts\alembic.exe\__main__
+.py", line 5, in 
+<module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\alembic\co
+nfig.py", line 1047, 
+in main
+    CommandLine(prog=pr
+og).main(argv=argv)
+    ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\alembic\co
+nfig.py", line 1037, 
+in main
+    self.run_cmd(cfg, 
+options)
+    ~~~~~~~~~~~~^^^^^^^
+^^^^^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\alembic\co
+nfig.py", line 971, in 
+run_cmd
+    fn(
+    ~~^
+        config,
+        ^^^^^^^
+        
+*[getattr(options, k, 
+None) for k in 
+positional],
+        ^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^
+        **{k: 
+getattr(options, k, 
+None) for k in kwarg},
+        ^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\alembic\co
+mmand.py", line 309, 
+in revision
+    script_directory.ru
+n_env()
+    ~~~~~~~~~~~~~~~~~~~
+~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\alembic\sc
+ript\base.py", line 
+545, in run_env
+    util.load_python_fi
+le(self.dir, "env.py")
+    ~~~~~~~~~~~~~~~~~~~
+~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\alembic\ut
+il\pyfiles.py", line 
+116, in 
+load_python_file
+    module = load_modul
+e_py(module_id, path)
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\alembic\ut
+il\pyfiles.py", line 
+136, in load_module_py
+    spec.loader.exec_mo
+dule(module)  # type: 
+ignore
+    ~~~~~~~~~~~~~~~~~~~
+~~~~^^^^^^^^
+  File "<frozen importl
+ib._bootstrap_external>
+", line 762, in 
+exec_module
+  File "<frozen importl
+ib._bootstrap>", line 
+491, in _call_with_fram
+es_removed
+  File "C:\Users\Lenovo
+\.gemini\antigravity\sc
+ratch\marvel_steel\alem
+bic\env.py", line 89, 
+in <module>
+    
+run_migrations_online()
+    
+~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\.gemini\antigravity\sc
+ratch\marvel_steel\alem
+bic\env.py", line 77, 
+in 
+run_migrations_online
+    with 
+connectable.connect() 
+as connection:
+         
+~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\base.py", line 
+3293, in connect
+    return self._connec
+tion_cls(self)
+           ~~~~~~~~~~~~
+~~~~~~~~^^^^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\base.py", line 
+145, in __init__
+    Connection._handle_
+dbapi_exception_noconne
+ction(
+    ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~^
+        err, dialect, 
+engine
+        
+^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\base.py", line 
+2448, in _handle_dbapi_
+exception_noconnection
+    raise sqlalchemy_ex
+ception.with_traceback(
+exc_info[2]) from e
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\base.py", line 
+143, in __init__
+    
+self._dbapi_connection 
+= 
+engine.raw_connection()
+                       
+      
+~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\base.py", line 
+3317, in raw_connection
+    return 
+self.pool.connect()
+           
+~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+448, in connect
+    return _ConnectionF
+airy._checkout(self)
+           ~~~~~~~~~~~~
+~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+1272, in _checkout
+    fairy = _Connection
+Record.checkout(pool)
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+712, in checkout
+    rec = 
+pool._do_get()
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\impl.py", line 
+306, in _do_get
+    return self._create
+_connection()
+           ~~~~~~~~~~~~
+~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+389, in 
+_create_connection
+    return 
+_ConnectionRecord(self)
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+674, in __init__
+    self.__connect()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+900, in __connect
+    with 
+util.safe_reraise():
+         
+~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\util\langhelpers.py", 
+line 121, in __exit__
+    raise exc_value.wit
+h_traceback(exc_tb)
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\pool\base.py", line 
+896, in __connect
+    
+self.dbapi_connection 
+= connection = pool._in
+voke_creator(self)
+                       
+                  ~~~~~
+~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\create.py", 
+line 667, in connect
+    return dialect.conn
+ect(*cargs_tup, 
+**cparams)
+           ~~~~~~~~~~~~
+~~~^^^^^^^^^^^^^^^^^^^^
+^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\sqlalchemy
+\engine\default.py", 
+line 630, in connect
+    return self.loaded_
+dbapi.connect(*cargs, 
+**cparams)  # type: 
+ignore[no-any-return]  
+# NOQA: E501
+           ~~~~~~~~~~~~
+~~~~~~~~~~~~~^^^^^^^^^^
+^^^^^^^^^
+  File "C:\Users\Lenovo
+\AppData\Local\Programs
+\Python\Python314\Lib\s
+ite-packages\psycopg2\_
+_init__.py", line 135, 
+in connect
+    conn = 
+_connect(dsn, connectio
+n_factory=connection_fa
+ctory, **kwasync)
+sqlalchemy.exc.Operatio
+nalError: (psycopg2.Ope
+rationalError) 
+connection to server 
+at "localhost" (::1), 
+port 5432 failed: 
+Connection refused 
+(0x0000274D/10061)
+	Is the server running 
+on that host and 
+accepting TCP/IP 
+connections?
+connection to server 
+at "localhost" 
+(127.0.0.1), port 5432 
+failed: Connection 
+refused 
+(0x0000274D/10061)
+	Is the server running 
+on that host and 
+accepting TCP/IP 
+connections?
+
+(Background on this 
+error at: https://sqlal
+che.me/e/20/e3q8)

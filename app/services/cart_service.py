@@ -97,7 +97,10 @@ def extract_cart_response(db: Session, cart: Cart) -> CartResponse:
         size = db.query(ProductSize).filter(ProductSize.id == item.size_id).first() if item.size_id else None
         
         # Determine price format (Assuming size defines price as per previous order logic)
-        item_price = size.additional_price if size else 0.0
+        if size:
+            item_price = size.discount_price if size.discount_price is not None else size.price
+        else:
+            item_price = 0.0
         # If product had a base price, we'd add it here. MVP seems to use size price.
         
         subtotal = item_price * item.quantity

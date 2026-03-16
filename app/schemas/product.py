@@ -20,7 +20,8 @@ class ProductImageResponse(ProductImageBase):
 
 class ProductSizeBase(BaseModel):
     name: str
-    additional_price: Optional[float] = 0.0
+    price: float = 0.0
+    discount_price: Optional[float] = None
     stock_quantity: Optional[int] = 0
 
 class ProductSizeCreate(ProductSizeBase):
@@ -28,7 +29,8 @@ class ProductSizeCreate(ProductSizeBase):
 
 class ProductSizeUpdate(BaseModel):
     name: Optional[str] = None
-    additional_price: Optional[float] = None
+    price: Optional[float] = None
+    discount_price: Optional[float] = None
     stock_quantity: Optional[int] = None
 
 class ProductSizeResponse(ProductSizeBase):
