@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     # File Uploads
     UPLOAD_DIR: str = "uploads/products"
     
+    # Telegram Notifications
+    TELEGRAM_BOT_TOKEN: str = "8664079807:AAGROUSJZDR3WtEf3whJw8MSmiZ7dCe3ClE"
+    TELEGRAM_CHAT_ID: str = "1871386592"
+    
     class Config:
         case_sensitive = True
         env_file = ".env"

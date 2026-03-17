@@ -1,17 +1,22 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db
 from app.schemas.order import OrderCreate, OrderResponse
 from app.services import order_service
+from app.utils.notifications import send_telegram_notification
 
 router = APIRouter()
 
 @router.post("/", response_model=OrderResponse)
 def create_order(
     order_in: OrderCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
-    return order_service.create_order(db, order_in=order_in)
+    order = order_service.create_order(db, order_in=order_in)
+    order_resp = OrderResponse.model_validate(order)
+    background_tasks.add_task(send_telegram_notification, order_resp)
+    return order
 
 @router.get("/{order_id}", response_model=OrderResponse)
 def get_order(
