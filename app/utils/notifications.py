@@ -34,11 +34,28 @@ async def send_telegram_notification(order: OrderResponse):
     }
 
     try:
+        logger.info(f"Preparing to send Telegram notification to chat_id: {chat_id}")
+        logger.info(f"Using Bot Token: {bot_token[:10]}... (truncated)")
+        logger.debug(f"Payload: {payload}")
+        print(f"TELEGRAM DEBUG: Triggering send for Order {order.id}") # Render logs stdout 
+        
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload, timeout=5.0)
+            
+            logger.info(f"Telegram API Response Status: {response.status_code}")
+            logger.info(f"Telegram API Response Body: {response.text}")
+            print(f"TELEGRAM DEBUG: Response Status = {response.status_code}")
+            print(f"TELEGRAM DEBUG: Response Body = {response.text}")
+
             response.raise_for_status()
-            logger.info(f"Telegram notification sent for Order {order.id}")
-    except httpx.HTTPError as e:
-        logger.error(f"Failed to send Telegram notification for Order {order.id}: {e}")
+            logger.info(f"Telegram notification sent successfully for Order {order.id}")
+            
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Telegram API returned an error status for Order {order.id}: {e.response.status_code} - {e.response.text}")
+        print(f"TELEGRAM ERROR: HTTPStatusError - {e.response.text}")
+    except httpx.RequestError as e:
+        logger.error(f"Failed to connect to Telegram API for Order {order.id}. Error: {e}")
+        print(f"TELEGRAM ERROR: RequestError - {e}")
     except Exception as e:
         logger.error(f"Unexpected error sending Telegram notification: {e}")
+        print(f"TELEGRAM ERROR: Unexpected Exception - {e}")
