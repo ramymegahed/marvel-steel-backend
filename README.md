@@ -1,117 +1,81 @@
-# Marvel Steel Backend
+# Marvel Steel E-Commerce Platform
 
-**Marvel Steel** is a clean, modular, and scalable FastAPI backend MVP designed for a furniture e-commerce store (beds, tables, home furniture). It provides a secure Administrative Dashboard API alongside a fast, public-facing Customer interface for browsing products and placing orders.
+Marvel Steel is a modern, full-stack E-Commerce platform for browsing and purchasing high-quality furniture, providing a robust administrative panel, category-based shopping, a robust cart framework with Telegram notifications for new orders, and image uploads.
 
----
+## Tech Stack
+* **Backend Framework:** FastAPI (Python 3.11)
+* **Data Validation:** Pydantic V2
+* **ORM & Database:** SQLAlchemy 2.0 / PostgreSQL
+* **Migrations:** Alembic
+* **Containerization:** Docker & Docker Compose
+* **Frontend:** React (Deployed on Vercel)
 
-## 🚀 Tech Stack
+## Architecture Overview
+The backend is a purely stateless, RESTful API deployed via Docker containers (typically on Render or AWS ECS). It leverages an external PostgreSQL database for persistent structured data. 
 
-- **Python 3.11+**
-- **FastAPI** (High-performance async web framework)
-- **PostgreSQL** (Robust relational database)
-- **SQLAlchemy ORM** (Database interaction)
-- **Alembic** (Database schema migrations)
-- **Pydantic V2** (Data validation and serialization)
-- **Docker & Docker Compose** (Containerization and deployment)
-- **Bcrypt & JWT** (Authentication & Security)
+**Image Upload Strategy:**
+Category and Product images uploaded via the Admin Portal are stored physically in `app/uploads/`. In cloud contexts like Render with ephemeral filesystems, a **Persistent Disk Mount** must be attached to the `/app/uploads` path to ensure images survive redeploys.
 
----
+**Telegram Notifications:**
+Order placement is completely asynchronous. An HTTP POST request is dispatched inside a FastAPI `BackgroundTasks` queue to alert store managers via Telegram about the latest sales—ensuring a zero-latency checkout experience for the customer.
 
-## 🌟 Key Features
+## Local Setup Guide
 
-- **Admin Dashboard Logic:** Full CRUD operations for managing Categories, Products, Sizes, and Product Images.
-- **Order Processing:** Automated stock reduction when orders are `CONFIRMED`, and stock restoration if `CANCELLED`.
-- **JWT Authentication:** Role-based access control protecting all administrative endpoints.
-- **Image Uploads:** File management utility for saving product images locally.
-- **Data Aggregation:** Dashboard endpoints for summarizing total orders, revenue, and product statistics.
+Follow these steps to spin up the backend API locally.
 
----
+### 1. Requirements
+Ensure you have Python 3.11+ and PostgreSQL locally installed, or use Docker Desktop.
 
-## 📁 Project Structure
-
-```text
-marvel_steel/
-│
-├── alembic/                # Database migration scripts
-├── app/
-│   ├── core/               # Configuration and security dependencies
-│   ├── models/             # SQLAlchemy Database Models (Tables)
-│   ├── schemas/            # Pydantic Schemas (Validation)
-│   ├── routers/            # API Endpoints
-│   │   ├── admin/          # Protected Admin-only routes
-│   │   └── public/         # Open Customer-facing routes
-│   ├── services/           # Core Business Logic (CRUD & Processing)
-│   ├── utils/              # Reusable helpers (Pagination, Uploads)
-│   ├── database.py         # SQLAlchemy engine and session initialization
-│   └── main.py             # FastAPI App instance and route inclusion
-│
-├── uploads/products/       # Local storage for uploaded product images
-├── .env                    # Environment variables (Optional for local)
-├── alembic.ini             # Alembic configuration
-├── docker-compose.yml      # Infrastructure orchestration
-├── Dockerfile              # Web service container definition
-└── requirements.txt        # Python package dependencies
-```
-
----
-
-## 🛠️ Getting Started (Docker Way)
-
-The application is fully containerized, making it incredibly easy to configure and run without manually installing Python modules or a Postgres server.
-
-### 1. Clone the Repository
+### 2. Virtual Environment Configuration
 ```bash
-git clone https://github.com/ramymegahed/marvel-steel-backend.git
-cd marvel-steel-backend
+# Clone the repository
+git clone git@github.com:your-org/marvel-steel-backend.git
+cd marvel_steel
+
+# Create and activate a virtual environment
+python -m venv venv
+# Windows:
+venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
 ```
 
-### 2. Configuration (Environment Variables)
-By default, the `docker-compose.yml` file injects the core environment variables required for the Docker network:
-- `DATABASE_URL`: `postgresql://admin:secret123@db:5432/marvel_steel`
-- `JWT_SECRET`: `change-this-jwt-secret-in-production`
-
-*(For production, you can place a `.env` file at the root or override these in `docker-compose.yml`)*
-
-### 3. Build and Run the Containers
-Spin up the PostgreSQL database and the FastAPI web server seamlessly in detached mode:
+### 3. Dependencies
+Install all required libraries, including `fastapi`, `sqlalchemy`, and `httpx`.
 ```bash
-docker-compose up --build -d
+pip install -r requirements.txt
 ```
-*Note: A local volume mount is configured, meaning any local code changes to `app/` will trigger a live reload of the server.*
 
-### 4. Run Database Migrations
-Once the containers are running, generate the database tables inside your PostgreSQL container by running:
+### 4. Database Setup & Migrations
+Create your local PostgreSQL database (e.g., `marvel_steel`). Then, point Alembic to it and synchronize the schema:
 ```bash
-docker-compose exec web alembic upgrade head
+# Ensure DATABASE_URL is set as an environment variable (see below)
+alembic upgrade head
 ```
 
-### 5. Default Super Admin Access
-For testing purposes, the application automatically creates a default Super Admin account upon startup if no admins exist in the database. You can log in immediately using these credentials:
+### 5. Running the Application
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+The server will boot up. Your API documentation is located at: `http://localhost:8000/docs`.
 
-- **Email**: `admin@marvelsteel.com`
-- **Password**: `Admin123456`
+## Environment Variables
 
-*(Alternatively, you can manually create another super admin by running `docker-compose exec web python create_superuser.py` and entering your desired credentials).*
+For the application to connect to external services, create a `.env` file in the root directory (or inject these into your cloud provider's dashboard) with the following exact keys:
 
----
+| Variable Name | Description |
+| :--- | :--- |
+| `DATABASE_URL` | The PostgreSQL connection string (e.g. `postgresql://user:pass@host:5432/dbname`) |
+| `SECRET_KEY` | Strongly randomized 256-bit string for JWT Token hashing |
+| `TELEGRAM_BOT_TOKEN` | The secure Bot Token received from BotFather |
+| `TELEGRAM_CHAT_ID` | The numerical Telegram Chat ID to route the alerts |
 
-## 📚 API Documentation
+## Docker Production Build
+The API is shipped with a robust `Dockerfile` executing:
+```dockerfile
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+```
+This guarantees the database is always successfully migrated to align with the schema before the Uvicorn web workers can accept public traffic.
 
-FastAPI automatically generates interactive API documentation. Once your Docker containers are running, you can access your API docs directly in your browser:
-
-- **Swagger UI (Interactive):** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc (Alternative):** [http://localhost:8000/redoc](http://localhost:8000/redoc)
-
----
-
-## 🗄️ Database Schema Overview
-
-The backend relies on several core relational models:
-
-- **Admin Base:** Stores `email`, bcrypt `hashed_password`, and `role` (`super_admin` or `staff`).
-- **Category:** Groups products. Tracks `name`, `description`, `image_url`, and `is_active` status. Note: creating or updating an image must be done via `multipart/form-data`.
-- **Product:** The core furniture item. Links to a Category. Includes `description`, `materials`.
-- **ProductImage:** Multiple image URLs linked to a specific Product. Specifies if an image `is_main`.
-- **ProductSize:** Variations of a product. Tracks `size label`, `additional_price`, and `stock_quantity`.
-- **Order & OrderItem:** Customer orders. `OrderItem` captures the explicit `price_at_purchase` so past order receipts remain historically accurate even if product prices change later.
-- **SiteSettings & Review:** General data for contact info arrays and customer feedback.
+## Author & Maintainers
+Developed & Maintained by the **Lecture Brain** dev team.
