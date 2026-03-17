@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     
     # Telegram Notifications
     TELEGRAM_BOT_TOKEN: str = "8664079807:AAHlkcNqtI9QfOWbLcwTXdDLgswF8JLETrs"
-    TELEGRAM_CHAT_ID: str = "5152690579"
+    TELEGRAM_CHAT_ID: str = "-5152690579"
     
     class Config:
         case_sensitive = True
