@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads/products"
     
     # Telegram Notifications
-    TELEGRAM_BOT_TOKEN: str = "8664079807:AAGROUSJZDR3WtEf3whJw8MSmiZ7dCe3ClE"
-    TELEGRAM_CHAT_ID: str = "1871386592"
+    TELEGRAM_BOT_TOKEN: str = "8664079807:AAHlkcNqtI9QfOWbLcwTXdDLgswF8JLETrs"
+    TELEGRAM_CHAT_ID: str = "5152690579"
     
     class Config:
         case_sensitive = True
