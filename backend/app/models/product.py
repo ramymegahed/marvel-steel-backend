@@ -40,6 +40,12 @@ class ProductSize(Base):
     price = Column(Float, default=0.0, nullable=False)
     discount_price = Column(Float, nullable=True)
     stock_quantity = Column(Integer, default=0)
+    bed_size = Column(String, nullable=True)       # e.g. "100 cm", "120 cm"
+    metal_color = Column(String, nullable=True)     # e.g. "أبيض", "أسود", "ذهبي"
+    slats_type = Column(String, nullable=True)      # e.g. "ملل خشب", "ملل معدن"
+    cushion_color = Column(String, nullable=True)   # e.g. "أوف وايت", "بيج" (outdoor)
+    rope_color = Column(String, nullable=True)       # e.g. "أسود", "بيج" (outdoor ropes)
+    umbrella_color = Column(String, nullable=True)   # e.g. "أحمر", "أزرق" (parasol)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     product = relationship("Product", back_populates="sizes")

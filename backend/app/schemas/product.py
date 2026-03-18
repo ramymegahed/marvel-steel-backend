@@ -23,6 +23,12 @@ class ProductSizeBase(BaseModel):
     price: float = 0.0
     discount_price: Optional[float] = None
     stock_quantity: Optional[int] = 0
+    bed_size: Optional[str] = None
+    metal_color: Optional[str] = None
+    slats_type: Optional[str] = None
+    cushion_color: Optional[str] = None
+    rope_color: Optional[str] = None
+    umbrella_color: Optional[str] = None
 
 class ProductSizeCreate(ProductSizeBase):
     pass
@@ -32,6 +38,12 @@ class ProductSizeUpdate(BaseModel):
     price: Optional[float] = None
     discount_price: Optional[float] = None
     stock_quantity: Optional[int] = None
+    bed_size: Optional[str] = None
+    metal_color: Optional[str] = None
+    slats_type: Optional[str] = None
+    cushion_color: Optional[str] = None
+    rope_color: Optional[str] = None
+    umbrella_color: Optional[str] = None
 
 class ProductSizeResponse(ProductSizeBase):
     id: int
