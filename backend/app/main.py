@@ -98,6 +98,13 @@ app.include_router(admin_analytics.router, prefix=f"{settings.API_V1_STR}/admin/
 # app.include_router(admin_migration.router, prefix=f"{settings.API_V1_STR}/admin/migration", tags=["admin_migration"])  # DISABLED: migration complete
 
 # --- Public API Router Setup ---
+# Backward compatibility aliases (for existing frontend)
+app.include_router(public_categories.router, prefix="/categories", tags=["public_categories"])
+app.include_router(public_products.router, prefix="/products", tags=["public_products"])
+app.include_router(public_orders.router, prefix="/orders", tags=["public_orders"])
+app.include_router(public_reviews.router, prefix="/reviews", tags=["public_reviews"])
+
+# Unified API v1 prefixes (preferred)
 app.include_router(public_categories.router, prefix=f"{settings.API_V1_STR}/categories", tags=["public_categories"])
 app.include_router(public_products.router, prefix=f"{settings.API_V1_STR}/products", tags=["public_products"])
 app.include_router(public_orders.router, prefix=f"{settings.API_V1_STR}/orders", tags=["public_orders"])
