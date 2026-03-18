@@ -81,10 +81,10 @@ def update_product(db: Session, product_id: int, product_in: ProductUpdate):
 
 def delete_product(db: Session, product_id: int):
     db_obj = get_product(db, product_id)
-    # File cleanup might be needed for images
-    db.delete(db_obj)
+    # Soft delete: hide from store but keep for order history
+    db_obj.is_active = False
     db.commit()
-    return {"message": "Product deleted"}
+    return {"message": "Product deactivated (soft delete)"}
 
 # --- Product Image Logic ---
 def add_product_image(db: Session, product_id: int, file_url: str):
