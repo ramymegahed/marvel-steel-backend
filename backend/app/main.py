@@ -20,7 +20,7 @@ from app.routers.admin import dashboard as admin_dashboard
 from app.routers.admin import settings as admin_settings
 from app.routers.admin import reviews as admin_reviews
 from app.routers.admin import analytics as admin_analytics
-from app.routers.admin import migration as admin_migration  # TEMP: remove after production migration
+# from app.routers.admin import migration as admin_migration  # DISABLED: migration complete
 
 # Public Routers
 from app.routers.public import categories as public_categories
@@ -95,13 +95,13 @@ app.include_router(admin_dashboard.router, prefix=f"{settings.API_V1_STR}/admin/
 app.include_router(admin_settings.router, prefix=f"{settings.API_V1_STR}/admin/settings", tags=["admin_settings"])
 app.include_router(admin_reviews.router, prefix=f"{settings.API_V1_STR}/admin/reviews", tags=["admin_reviews"])
 app.include_router(admin_analytics.router, prefix=f"{settings.API_V1_STR}/admin/analytics", tags=["admin_analytics"])
-app.include_router(admin_migration.router, prefix=f"{settings.API_V1_STR}/admin/migration", tags=["admin_migration"])  # TEMP
+# app.include_router(admin_migration.router, prefix=f"{settings.API_V1_STR}/admin/migration", tags=["admin_migration"])  # DISABLED: migration complete
 
 # --- Public API Router Setup ---
-app.include_router(public_categories.router, prefix="/categories", tags=["public_categories"])
-app.include_router(public_products.router, prefix="/products", tags=["public_products"])
-app.include_router(public_orders.router, prefix="/orders", tags=["public_orders"])
-app.include_router(public_reviews.router, prefix="/reviews", tags=["public_reviews"])
+app.include_router(public_categories.router, prefix=f"{settings.API_V1_STR}/categories", tags=["public_categories"])
+app.include_router(public_products.router, prefix=f"{settings.API_V1_STR}/products", tags=["public_products"])
+app.include_router(public_orders.router, prefix=f"{settings.API_V1_STR}/orders", tags=["public_orders"])
+app.include_router(public_reviews.router, prefix=f"{settings.API_V1_STR}/reviews", tags=["public_reviews"])
 app.include_router(public_cart.router, prefix=f"{settings.API_V1_STR}/cart", tags=["public_cart"])
 app.include_router(public_checkout.router, prefix=f"{settings.API_V1_STR}/checkout", tags=["public_checkout"])
 

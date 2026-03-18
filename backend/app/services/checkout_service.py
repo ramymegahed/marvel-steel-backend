@@ -28,9 +28,9 @@ def calculate_checkout(db: Session, cart_id: str) -> CheckoutCalculateResponse:
             size = db.query(ProductSize).filter(ProductSize.id == item.size_id).first()
             if not size:
                  raise HTTPException(status_code=400, detail=f"Size {item.size_id} is invalid for product {product.name}")
-            # Verify stock ONLY warning (not deducting here)
-            if size.stock_quantity < item.quantity:
-                 raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name} (Size: {size.name})")
+            # DISABLED: Manufacture on demand — no stock management
+            # if size.stock_quantity < item.quantity:
+            #      raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name} (Size: {size.name})")
             
             item_price = size.discount_price if size.discount_price is not None else size.price
 
@@ -96,9 +96,9 @@ def confirm_checkout(db: Session, cart_id: str, checkout_in: CheckoutConfirm) ->
             size = db.query(ProductSize).filter(ProductSize.id == item.size_id).first()
             item_price = size.discount_price if size.discount_price is not None else size.price
             
-            # Deduct Stock
-            size.stock_quantity -= item.quantity
-            db.add(size)
+            # DISABLED: Manufacture on demand — no stock deduction
+            # size.stock_quantity -= item.quantity
+            # db.add(size)
 
         db.add(OrderItem(
             order_id=db_order.id,

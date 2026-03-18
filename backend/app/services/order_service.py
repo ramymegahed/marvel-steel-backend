@@ -35,8 +35,9 @@ def create_order(db: Session, order_in: OrderCreate):
             size_obj = db.query(ProductSize).filter(ProductSize.id == item_in.size_id, ProductSize.product_id == item_in.product_id).first()
             if not size_obj:
                  raise HTTPException(status_code=400, detail=f"Size {item_in.size_id} is invalid for product {item_in.product_id}")
-            if size_obj.stock_quantity < item_in.quantity:
-                 raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name} (Size: {size_obj.name})")
+            # DISABLED: Manufacture on demand — no stock management
+            # if size_obj.stock_quantity < item_in.quantity:
+            #      raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name} (Size: {size_obj.name})")
             
             item_price += size_obj.discount_price if size_obj.discount_price is not None else size_obj.price
 
@@ -85,14 +86,11 @@ def update_order_status(db: Session, order_id: int, status_in: OrderUpdateStatus
     if old_status == new_status:
         return order
         
-    # Logic: Stock reduces only on CONFIRMED
-    if new_status == OrderStatus.confirmed and old_status != OrderStatus.confirmed:
-        _adjust_stock(db, order, reduce=True)
-        
-    # Logic: Stock restored if CANCELLED (if it was confirmed previously or in transit)
-    # The requirement: "Stock restored if CANCELLED"
-    if new_status == OrderStatus.cancelled and old_status in [OrderStatus.confirmed, OrderStatus.in_delivery, OrderStatus.delivered]:
-        _adjust_stock(db, order, reduce=False)
+    # DISABLED: Manufacture on demand — no stock management
+    # if new_status == OrderStatus.confirmed and old_status != OrderStatus.confirmed:
+    #     _adjust_stock(db, order, reduce=True)
+    # if new_status == OrderStatus.cancelled and old_status in [OrderStatus.confirmed, OrderStatus.in_delivery, OrderStatus.delivered]:
+    #     _adjust_stock(db, order, reduce=False)
         
     order.status = new_status
     db.commit()
