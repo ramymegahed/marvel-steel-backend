@@ -13,6 +13,7 @@ from app.models.product import Product, ProductImage, ProductSize
 import csv
 import os
 import re
+import sqlalchemy as sa
 from urllib.parse import unquote
 
 
@@ -207,8 +208,34 @@ def process_csv(db: Session, filepath: str, category_cache: dict, stats: dict):
 
 
 # ---------------------------------------------------------------------------
-# Endpoint
+# Endpoints
 # ---------------------------------------------------------------------------
+
+@router.post("/clear-data")
+def clear_product_data(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin),
+):
+    """
+    Wipe all product-related data using TRUNCATE CASCADE.
+    This handles the FK chain: order_items/cart_items → product_sizes/products → categories.
+    Protected by admin authentication.
+    """
+    try:
+        # TRUNCATE CASCADE atomically removes all rows and cascades through FKs
+        db.execute(
+            sa.text(
+                "TRUNCATE TABLE cart_items, order_items, product_sizes, "
+                "product_images, products, orders, carts, categories "
+                "RESTART IDENTITY CASCADE"
+            )
+        )
+        db.commit()
+        return {"status": "success", "message": "All product, order, cart, and category data cleared."}
+    except Exception as e:
+        db.rollback()
+        return {"status": "error", "message": str(e)}
+
 
 @router.post("/run-migration")
 def run_migration(
@@ -217,12 +244,11 @@ def run_migration(
 ):
     """
     Trigger WooCommerce CSV data migration.
+    Call /clear-data first if re-importing.
     Protected by admin authentication.
     DELETE THIS ENDPOINT after production migration is complete.
     """
     # Locate CSV files
-    # In Docker, the working dir is /app (which is backend/)
-    # so CSVs at /app/beds_data.csv.csv  are at the same level
     app_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     csv_files = [
         os.path.join(app_root, "beds_data.csv.csv"),
@@ -242,12 +268,12 @@ def run_migration(
     if missing:
         return {"status": "error", "message": f"CSV files not found: {missing}"}
 
-    # Check if data already exists
+    # Check if data already exists (warn but don't block)
     existing_products = db.query(Product).count()
     if existing_products > 0:
         return {
             "status": "skipped",
-            "message": f"Database already contains {existing_products} products. Clear data first or remove this check.",
+            "message": f"Database already has {existing_products} products. Call /clear-data first, then retry.",
         }
 
     stats = {"categories": 0, "products": 0, "sizes": 0, "images": 0, "skipped": 0}
@@ -273,3 +299,4 @@ def run_migration(
     except Exception as e:
         db.rollback()
         return {"status": "error", "message": str(e)}
+
