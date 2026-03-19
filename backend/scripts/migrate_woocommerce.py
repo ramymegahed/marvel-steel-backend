@@ -17,7 +17,10 @@ import csv
 import os
 import re
 import sys
-from urllib.parse import unquote
+import httpx
+import uuid
+from urllib.parse import unquote, urlparse
+from pathlib import Path
 
 # Ensure the backend directory is on sys.path so app.* imports work
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -61,6 +64,52 @@ def build_variation_name(attrs: dict) -> str:
     """Build a human-readable name from non-empty attribute values."""
     parts = [v for v in attrs.values() if v]
     return " - ".join(parts) if parts else "Default"
+
+
+def download_image(url: str, upload_dir: str) -> str | None:
+    """
+    Download an external image and save it locally.
+    Returns the relative path to the saved image or None on failure.
+    """
+    if not url or not url.startswith("http"):
+        return url
+
+    try:
+        # Create a unique filename based on the original extension
+        ext = os.path.splitext(urlparse(url).path)[1] or ".jpg"
+        # Remove any query params from extension
+        ext = ext.split('?')[0]
+        filename = f"migrated_{uuid.uuid4().hex[:10]}{ext}"
+        
+        target_dir = os.path.join(upload_dir, "migrated")
+        os.makedirs(target_dir, exist_ok=True)
+        
+        target_path = os.path.join(target_dir, filename)
+        
+        # Download using httpx
+        with httpx.Client(follow_redirects=True, timeout=30.0) as client:
+            resp = client.get(url)
+            
+            # Vercel SPA Fallback Check: Reject if it's HTML instead of an image
+            content_type = resp.headers.get("content-type", "").lower()
+            
+            if resp.status_code == 200:
+                if not content_type.startswith("image/"):
+                    print(f"  [!] Rejected HTML fallback for {url} (Content-Type: {content_type})")
+                    return url
+                    
+                with open(target_path, "wb") as f:
+                    f.write(resp.content)
+                
+                print(f"  [+] Successfully downloaded: {url.split('/')[-1]}")
+                # Return the relative path as stored in DB
+                return f"uploads/migrated/{filename}"
+            else:
+                print(f"  [!] Failed to download {url}: Status {resp.status_code}")
+                return url # Fallback to original URL
+    except Exception as e:
+        print(f"  [!] Error downloading {url}: {e}")
+        return url # Fallback to original URL
 
 
 # ---------------------------------------------------------------------------
@@ -155,13 +204,21 @@ def process_csv(db: Session, filepath: str, category_cache: dict, stats: dict):
         if images_str:
             urls = [u.strip() for u in images_str.split(",") if u.strip()]
             for i, url in enumerate(urls):
+                # Download image locally
+                backend_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                local_url = download_image(url, os.path.join(backend_root, "uploads"))
+                
                 img = ProductImage(
                     product_id=product.id,
-                    image_url=url,
+                    image_url=local_url,
                     is_main=(i == 0),
                 )
                 db.add(img)
                 stats["images"] += 1
+                
+                # Auto-set category image if not set
+                if i == 0 and not category.image_url:
+                    category.image_url = local_url
 
         print(f"  [+] Product: {name}  (SKU={sku}, category={cat_name})")
 
@@ -321,10 +378,16 @@ def main():
     print("=" * 60)
 
     # Locate CSV files (relative to the project root)
-    # Script is at backend/scripts/migrate_woocommerce.py
-    # CSVs are at the project root (one level above backend/)
+    # Script is at /app/scripts/migrate_woocommerce.py or backend/scripts/migrate_woocommerce.py
     backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    project_root = os.path.dirname(backend_dir)
+    
+    # In Docker, backend_dir is /app and CSVs are there.
+    # In local dev, CSVs are often in the project root (parent of backend).
+    if os.path.exists(os.path.join(backend_dir, "beds_data.csv.csv")):
+        project_root = backend_dir
+    else:
+        project_root = os.path.dirname(backend_dir)
+        
     csv_files = [
         os.path.join(project_root, "beds_data.csv.csv"),
         os.path.join(project_root, "outdoor_data.csv.csv"),

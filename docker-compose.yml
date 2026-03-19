@@ -5,6 +5,7 @@ services:
     image: postgres:15-alpine
     container_name: marvel_db
     restart: always
+    env_file: .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret123}
@@ -18,7 +19,7 @@ services:
       retries: 5
 
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: marvel_backend
@@ -28,6 +29,7 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
+    env_file: .env
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-secret123}@db:5432/${POSTGRES_DB:-marvel_steel}
       - SECRET_KEY=${SECRET_KEY}
@@ -39,10 +41,10 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: DockerFile   # capital F to match the actual filename
       args:
-        # The frontend needs this injected at build time
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:8000/api/v1}
+        # Reads VITE_API_URL from root .env file
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
     container_name: marvel_frontend
     restart: always
     depends_on:

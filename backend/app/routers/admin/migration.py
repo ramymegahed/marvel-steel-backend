@@ -9,12 +9,17 @@ from app.core.dependencies import get_db, get_current_admin
 from app.models.admin import Admin
 from app.models.category import Category
 from app.models.product import Product, ProductImage, ProductSize
-
 import csv
 import os
 import re
+import httpx
+import uuid
+import shutil
 import sqlalchemy as sa
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
+
+# Absolute path to /app for consistent results inside Docker
+APP_ROOT = "/app" if os.path.exists("/app/beds_data.csv.csv") else os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
 router = APIRouter()
@@ -48,6 +53,27 @@ def decode_attribute(value: str) -> str:
 def build_variation_name(attrs: dict) -> str:
     parts = [v for v in attrs.values() if v]
     return " - ".join(parts) if parts else "Default"
+
+
+def download_image(url: str, upload_dir: str) -> str | None:
+    if not url or not url.startswith("http"):
+        return url
+    try:
+        ext = os.path.splitext(urlparse(url).path)[1] or ".jpg"
+        ext = ext.split('?')[0]
+        filename = f"migrated_{uuid.uuid4().hex[:10]}{ext}"
+        target_dir = os.path.join(upload_dir, "migrated")
+        os.makedirs(target_dir, exist_ok=True)
+        target_path = os.path.join(target_dir, filename)
+        with httpx.Client(follow_redirects=True, timeout=30.0) as client:
+            resp = client.get(url)
+            if resp.status_code == 200:
+                with open(target_path, "wb") as f:
+                    f.write(resp.content)
+                return f"uploads/migrated/{filename}"
+    except Exception:
+        pass
+    return url
 
 
 def get_or_create_category(db: Session, name: str, cache: dict) -> Category:
@@ -109,8 +135,19 @@ def process_csv(db: Session, filepath: str, category_cache: dict, stats: dict):
         if images_str:
             urls = [u.strip() for u in images_str.split(",") if u.strip()]
             for i, url in enumerate(urls):
-                db.add(ProductImage(product_id=product.id, image_url=url, is_main=(i == 0)))
+                # Download image locally
+                local_url = download_image(url, os.path.join(APP_ROOT, "uploads"))
+                
+                db.add(ProductImage(product_id=product.id, image_url=local_url, is_main=(i == 0)))
                 stats["images"] += 1
+                
+                # Count successful downloads
+                if local_url and local_url.startswith("uploads/migrated/"):
+                    stats["downloads_success"] = stats.get("downloads_success", 0) + 1
+                
+                # Auto-set category image if not set
+                if i == 0 and not category.image_url:
+                    category.image_url = local_url
 
     db.flush()
 
@@ -230,8 +267,18 @@ def clear_product_data(
                 "RESTART IDENTITY CASCADE"
             )
         )
+        # 2. Clear images folder (Nuclear Option)
+        try:
+            migrated_dir = os.path.join(APP_ROOT, "uploads", "migrated")
+            if os.path.exists(migrated_dir):
+                shutil.rmtree(migrated_dir)
+                os.makedirs(migrated_dir, exist_ok=True)
+                print("  [+] Purged migrated images folder.")
+        except Exception as e:
+            print(f"  [!] Failed to purge images folder: {e}")
+
         db.commit()
-        return {"status": "success", "message": "All product, order, cart, and category data cleared."}
+        return {"status": "success", "message": "All categories, products, images, and orders have been cleared. Migrated images folder purged."}
     except Exception as e:
         db.rollback()
         return {"status": "error", "message": str(e)}
@@ -249,19 +296,10 @@ def run_migration(
     DELETE THIS ENDPOINT after production migration is complete.
     """
     # Locate CSV files
-    app_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     csv_files = [
-        os.path.join(app_root, "beds_data.csv.csv"),
-        os.path.join(app_root, "outdoor_data.csv.csv"),
+        os.path.join(APP_ROOT, "beds_data.csv.csv"),
+        os.path.join(APP_ROOT, "outdoor_data.csv.csv"),
     ]
-
-    # Fallback: also check one level up (project root for local dev)
-    if not os.path.exists(csv_files[0]):
-        project_root = os.path.dirname(app_root)
-        csv_files = [
-            os.path.join(project_root, "beds_data.csv.csv"),
-            os.path.join(project_root, "outdoor_data.csv.csv"),
-        ]
 
     # Verify CSVs exist
     missing = [f for f in csv_files if not os.path.exists(f)]
@@ -291,12 +329,12 @@ def run_migration(
             "summary": {
                 "categories_created": stats["categories"],
                 "products_created": stats["products"],
-                "variations_created": stats["sizes"],
-                "images_created": stats["images"],
+                "variations_created": stats.get("sizes", 0),
+                "images_created": stats.get("images", 0),
+                "images_downloaded": stats.get("downloads_success", 0),
                 "rows_skipped": stats["skipped"],
             },
         }
     except Exception as e:
         db.rollback()
         return {"status": "error", "message": str(e)}
-
