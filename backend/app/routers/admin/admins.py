@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.dependencies import get_db, get_current_super_admin
-from app.models.admin import Admin
+from app.models.admin import Admin, AdminRole
 from app.schemas.admin import AdminResponse, AdminCreate, AdminUpdate
 from app.core.security import get_password_hash
 
@@ -58,8 +58,8 @@ def update_admin(
     if not db_admin:
         raise HTTPException(status_code=404, detail="Admin not found")
         
-    if db_admin.role == "super_admin" and admin_in.role and admin_in.role != "super_admin":
-        super_admin_count = db.query(Admin).filter(Admin.role == "super_admin").count()
+    if db_admin.role == AdminRole.super_admin and admin_in.role and admin_in.role != AdminRole.super_admin:
+        super_admin_count = db.query(Admin).filter(Admin.role == AdminRole.super_admin).count()
         if super_admin_count <= 1:
             raise HTTPException(status_code=400, detail="At least one super admin must exist in the system.")
             
@@ -88,8 +88,8 @@ def delete_admin(
     if db_admin.id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot delete your own account")
         
-    if db_admin.role == "super_admin":
-        super_admin_count = db.query(Admin).filter(Admin.role == "super_admin").count()
+    if db_admin.role == AdminRole.super_admin:
+        super_admin_count = db.query(Admin).filter(Admin.role == AdminRole.super_admin).count()
         if super_admin_count <= 1:
             raise HTTPException(status_code=400, detail="At least one super admin must exist in the system.")
             

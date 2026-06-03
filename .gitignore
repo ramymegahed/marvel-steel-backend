@@ -83,3 +83,8 @@ Thumbs.db
 uploads/
 /app/uploads/
 alembic.ini.bak
+
+# Editor backups / accidental shell output files
+*.save
+of\ -i*
+lsof\ *

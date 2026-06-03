@@ -1,12 +1,26 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from app.models.cart import Cart, CartItem
 from app.models.product import Product, ProductSize
 from app.schemas.cart import CartItemCreate, CartItemUpdate, CartResponse, CartItemResponse
 
+def _load_cart(db: Session, cart_id: str):
+    """Fetch a cart with all items, products, and sizes in a single query."""
+    return (
+        db.query(Cart)
+        .options(
+            joinedload(Cart.items)
+            .joinedload(CartItem.product),
+            joinedload(Cart.items)
+            .joinedload(CartItem.size),
+        )
+        .filter(Cart.id == cart_id)
+        .first()
+    )
+
 def get_or_create_cart(db: Session, cart_id: str = None) -> Cart:
     if cart_id:
-        cart = db.query(Cart).filter(Cart.id == cart_id).first()
+        cart = _load_cart(db, cart_id)
         if cart:
             return cart
 
@@ -53,38 +67,31 @@ def add_to_cart(db: Session, cart_id: str, item_in: CartItemCreate):
         db.add(new_item)
 
     db.commit()
-    return cart
+    return _load_cart(db, cart.id)
 
 def update_cart_item(db: Session, cart_id: str, item_id: int, item_in: CartItemUpdate):
     item = db.query(CartItem).filter(CartItem.id == item_id, CartItem.cart_id == cart_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found in cart")
-    
     item.quantity = item_in.quantity
     db.commit()
-    
-    # Return updated cart
-    cart = db.query(Cart).filter(Cart.id == cart_id).first()
-    return cart
+    return _load_cart(db, cart_id)
 
 def remove_from_cart(db: Session, cart_id: str, item_id: int):
     item = db.query(CartItem).filter(CartItem.id == item_id, CartItem.cart_id == cart_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found in cart")
-    
     db.delete(item)
     db.commit()
-
-    cart = db.query(Cart).filter(Cart.id == cart_id).first()
-    return cart
+    return _load_cart(db, cart_id)
 
 def clear_cart(db: Session, cart_id: str):
     cart = db.query(Cart).filter(Cart.id == cart_id).first()
-    if cart:
-        db.query(CartItem).filter(CartItem.cart_id == cart_id).delete()
-        db.commit()
-        db.refresh(cart)
-    return cart
+    if not cart:
+        return None
+    db.query(CartItem).filter(CartItem.cart_id == cart_id).delete()
+    db.commit()
+    return _load_cart(db, cart_id)
 
 def extract_cart_response(db: Session, cart: Cart) -> CartResponse:
     items_response = []
@@ -92,17 +99,11 @@ def extract_cart_response(db: Session, cart: Cart) -> CartResponse:
     total_items = 0
 
     for item in cart.items:
-        # Load relationships explicitly or via db queries if needed to calculate prices
-        product = db.query(Product).filter(Product.id == item.product_id).first()
-        size = db.query(ProductSize).filter(ProductSize.id == item.size_id).first() if item.size_id else None
-        
-        # Determine price format (Assuming size defines price as per previous order logic)
-        if size:
-            item_price = size.discount_price if size.discount_price is not None else size.price
-        else:
-            item_price = 0.0
-        # If product had a base price, we'd add it here. MVP seems to use size price.
-        
+        # Relationships are pre-loaded via _load_cart — no extra queries here
+        product = item.product
+        size = item.size
+
+        item_price = (size.discount_price if size.discount_price is not None else size.price) if size else 0.0
         subtotal = item_price * item.quantity
         total_price += subtotal
         total_items += item.quantity

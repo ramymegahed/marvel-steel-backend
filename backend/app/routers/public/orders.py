@@ -1,28 +1,18 @@
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db
-from app.schemas.order import OrderCreate, OrderResponse
+from app.schemas.order import OrderResponse
 from app.services import order_service
-from app.utils.notifications import send_telegram_notification
 
 router = APIRouter()
-
-@router.post("/", response_model=OrderResponse)
-def create_order(
-    order_in: OrderCreate,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
-):
-    order = order_service.create_order(db, order_in=order_in)
-    order_resp = OrderResponse.model_validate(order)
-    background_tasks.add_task(send_telegram_notification, order_resp)
-    return order
 
 @router.get("/{order_id}", response_model=OrderResponse)
 def get_order(
     order_id: int,
+    phone: str = Query(..., description="Phone number used when placing the order"),
     db: Session = Depends(get_db)
 ):
-    # Depending on requirements, maybe customers need a secret key or phone number to view their order to prevent enumeration.
-    # For MVP, exposing direct ID view here as specified.
-    return order_service.get_order(db, order_id=order_id)
+    order = order_service.get_order(db, order_id=order_id)
+    if order.phone != phone.strip():
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order

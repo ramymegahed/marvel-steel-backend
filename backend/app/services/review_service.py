@@ -3,8 +3,11 @@ from fastapi import HTTPException
 from app.models.site_settings import Review
 from app.schemas.settings import ReviewCreate, ReviewUpdate
 
-def get_reviews(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Review).order_by(Review.created_at.desc()).offset(skip).limit(limit).all()
+def get_reviews(db: Session, skip: int = 0, limit: int = 100, approved_only: bool = False):
+    query = db.query(Review)
+    if approved_only:
+        query = query.filter(Review.is_approved == True)
+    return query.order_by(Review.created_at.desc()).offset(skip).limit(limit).all()
 
 def add_review(db: Session, review_in: ReviewCreate):
     db_obj = Review(**review_in.model_dump())

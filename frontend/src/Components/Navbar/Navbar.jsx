@@ -216,15 +216,15 @@ export default function Navbar() {
                 <div className="px-4">
                     <div className="flex items-center justify-between h-16">
                         {/* Logo */}
-                        <Link to="/" className="flex items-center relative" aria-label="Home">
+                        <Link to="/" className="flex items-center gap-2" aria-label="Home">
                             <img
-                                src="furnitures-logo.png"
+                                src="/logo.png"
                                 alt="Marvel Steel Logo"
-                                className="absolute w-10 h-10 object-contain opacity-50"
+                                className="h-20 w-auto object-contain opacity-50"
                                 loading="eager"
                                 style={{
                                     [language === 'ar' ? 'right' : 'left']: 0,
-                                    transform: language === 'ar' ? 'translateX(20%)' : 'translateX(-20%)'
+                                    transform: language === 'ar' ? 'translateX(5%)' : 'translateX(-5%)'
                                 }}
                             />
                             <span
@@ -267,15 +267,15 @@ export default function Navbar() {
         return (
             <div className={viewport.isTablet ? "px-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"}>
                 <div className="flex items-center justify-between h-20">
-                    <Link to="/" className="flex items-center relative" aria-label="Home">
+                    <Link to="/" className="flex items-center gap-2" aria-label="Home">
                         <img
-                            src="furnitures-logo.png"
+                            src="/logo.png"
                             alt="Marvel Steel Logo"
-                            className={`absolute object-contain opacity-40 ${viewport.isTablet ? 'w-10 h-10' : 'w-14 h-14'}`}
+                            className={`h-20 w-auto object-contain opacity-40 ${viewport.isTablet ? 'w-10 h-10' : 'w-14 h-14'}`}
                             loading="eager"
                             style={{
                                 [language === 'ar' ? 'right' : 'left']: 0,
-                                transform: language === 'ar' ? `translateX(${viewport.isTablet ? '25%' : '30%'})` : `translateX(-${viewport.isTablet ? '25%' : '30%'})`
+                                transform: language === 'ar' ? `translateX(${viewport.isTablet ? '5%' : '10%'})` : `translateX(-${viewport.isTablet ? '5%' : '10%'})`
                             }}
                         />
                         <span

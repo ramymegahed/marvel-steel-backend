@@ -39,7 +39,7 @@ def delete_product_image(
 ):
     return product_service.delete_product_image(db, image_id)
 
-@router.put("/images/{image_id}/set-main", response_model=ProductImageResponse)
+@router.put("/{product_id}/images/{image_id}/set-main", response_model=ProductImageResponse)
 def set_main_image(
     product_id: int,
     image_id: int,

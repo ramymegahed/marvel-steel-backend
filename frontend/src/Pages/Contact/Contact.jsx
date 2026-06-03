@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Facebook, Instagram } from 'lucide-react';
 import { useLanguage } from '../../Components/Context/LanguageContext';
+import { BASE_URL } from '../../App';
 
-// Content dictionary
 const CONTACT_CONTENT = {
   en: {
     title: 'Get in Touch',
     subtitle: "We'd love to hear from you",
     whatsapp: {
-      number: '01044231348',
       message: 'Chat on WhatsApp',
       availability: 'Available 24/7'
     },
@@ -23,7 +22,6 @@ const CONTACT_CONTENT = {
     title: 'تواصل معنا',
     subtitle: 'يسعدنا التواصل معك',
     whatsapp: {
-      number: '٠١٠٤٤٢٣١٣٤٨',
       message: 'تواصل عبر واتساب',
       availability: 'متاح ٢٤/٧'
     },
@@ -38,17 +36,28 @@ const CONTACT_CONTENT = {
 export default function Contact() {
   const { language } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
     setIsVisible(true);
+
+    fetch(`${BASE_URL}/api/v1/settings/`)
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.whatsapp_number) setWhatsappNumber(data.whatsapp_number);
+      })
+      .catch(() => {});
   }, []);
 
   const content = CONTACT_CONTENT[language];
   const isRTL = language === 'ar';
 
-  // WhatsApp link with the provided number
-  const whatsappLink = `https://wa.me/201044231348`; // Removed the leading 0 for international format
+  const displayNumber = whatsappNumber ?? '—';
+  const internationalNumber = whatsappNumber
+    ? whatsappNumber.replace(/^0/, '2')   // 01XXXXXXXXX → 21XXXXXXXXX (Egypt)
+    : null;
+  const whatsappLink = internationalNumber ? `https://wa.me/${internationalNumber}` : '#';
 
   return (
     <main className={`min-h-screen bg-linear-to-br from-[#F5F1E8] to-[#E8E0D5] py-12 px-4 ${isRTL ? 'rtl' : 'ltr'}`}>
@@ -97,7 +106,7 @@ export default function Contact() {
 
           <div className="text-center mb-6">
             <span className="text-3xl md:text-4xl font-bold text-[#2C2C2C] tracking-wider">
-              {content.whatsapp.number}
+              {displayNumber}
             </span>
           </div>
 
@@ -105,7 +114,7 @@ export default function Contact() {
             href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full bg-[#25D366] hover:bg-[#128C7E] text-white text-center py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#25D366]/50"
+            className={`block w-full bg-[#25D366] hover:bg-[#128C7E] text-white text-center py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#25D366]/50 ${!internationalNumber ? 'opacity-50 pointer-events-none' : ''}`}
           >
             {content.whatsapp.message}
           </a>
@@ -125,7 +134,6 @@ export default function Contact() {
           </h3>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Facebook */}
             <a
               href="https://www.facebook.com/share/1AgrVBaJ6j/"
               target="_blank"
@@ -136,9 +144,8 @@ export default function Contact() {
               <span className="font-semibold text-lg">{content.social.facebook}</span>
             </a>
 
-            {/* Instagram */}
             <a
-              href="https://www.instagram.com/" // Note: You provided Facebook link for Instagram, update this if you have the correct Instagram link
+              href="https://www.instagram.com/marvelsteel1"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-linear-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] hover:opacity-90 text-white p-6 rounded-xl text-center transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#833AB4]/50 group"
@@ -149,7 +156,6 @@ export default function Contact() {
           </div>
         </motion.div>
 
-        {/* Quick Contact Note */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: isVisible ? 1 : 0 }}

@@ -7,6 +7,7 @@ import {
 import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useAdmin } from '../../Components/Context/AdminContext';
 import { BASE_URL } from '../../App';
+import { apiFetch } from '../../utils/apiClient';
 
 // ─── Shared UI Components ─────────────────────────────────────────────────────
 const Card = ({ children, className = '' }) => (
@@ -1189,36 +1190,6 @@ export default function AdminProducts() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // ─── API Helper ────────────────────────────────────────────────────────────
-  const apiFetch = useCallback(async (path, options = {}) => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) throw new Error('Not authenticated');
-
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      ...(options.headers || {}),
-    };
-
-    if (!(options.body instanceof FormData)) {
-      headers['Content-Type'] = 'application/json';
-    }
-
-    const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
-
-    if (!res.ok) {
-      let detail = `Request failed (${res.status})`;
-      try {
-        const body = await res.json();
-        detail = body.detail || body.message || detail;
-      } catch {
-        // Ignore parse errors
-      }
-      throw new Error(detail);
-    }
-
-    if (res.status === 204) return null;
-    return res.json();
-  }, []);
 
   // ─── Fetch Categories ──────────────────────────────────────────────────────
   const fetchCategories = useCallback(async () => {
@@ -1487,7 +1458,7 @@ export default function AdminProducts() {
     if (!selectedProduct) return;
 
     try {
-      const updated = await apiFetch(`/api/v1/admin/products/images/${imageId}/set-main?product_id=${selectedProduct.id}`, {
+      const updated = await apiFetch(`/api/v1/admin/products/${selectedProduct.id}/images/${imageId}/set-main`, {
         method: 'PUT'
       });
 

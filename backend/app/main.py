@@ -1,12 +1,15 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.database import SessionLocal, engine
-from app.models.admin import Admin
+from app.database import SessionLocal
+from app.models.admin import Admin, AdminRole
 from app.core.security import get_password_hash
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
+from app.core.limiter import limiter
 
 # Admin Routers
 from app.routers.admin import auth as admin_auth
@@ -20,7 +23,6 @@ from app.routers.admin import dashboard as admin_dashboard
 from app.routers.admin import settings as admin_settings
 from app.routers.admin import reviews as admin_reviews
 from app.routers.admin import analytics as admin_analytics
-from app.routers.admin import migration as admin_migration  # TEMP: delete after production migration
 
 # Public Routers
 from app.routers.public import categories as public_categories
@@ -29,12 +31,10 @@ from app.routers.public import orders as public_orders
 from app.routers.public import reviews as public_reviews
 from app.routers.public import cart as public_cart
 from app.routers.public import checkout as public_checkout
+from app.routers.public import settings as public_settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure models are created in DB if not already
-    Admin.metadata.create_all(bind=engine)
-    
     db = SessionLocal()
     try:
         # Check if any admin exists
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
             new_admin = Admin(
                 email=default_email,
                 hashed_password=hashed_password,
-                role="super_admin"
+                role=AdminRole.super_admin
             )
             db.add(new_admin)
             db.commit()
@@ -65,21 +65,22 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Set all CORS enabled origins
-origins = [
-    "http://localhost:5173",
-    "http://localhost",
-    "http://localhost:8000"
-    "http://127.0.0.1",
-    "http://127.0.0.1:8000",
-    "http://localhost:5174",
+ALLOWED_ORIGINS = [
+    "https://marvelsteel1.com",
     "https://marvel-steel-eight.vercel.app",
+    "http://173.212.246.139",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "http://localhost",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -100,7 +101,6 @@ app.include_router(admin_dashboard.router, prefix=f"{settings.API_V1_STR}/admin/
 app.include_router(admin_settings.router, prefix=f"{settings.API_V1_STR}/admin/settings", tags=["admin_settings"])
 app.include_router(admin_reviews.router, prefix=f"{settings.API_V1_STR}/admin/reviews", tags=["admin_reviews"])
 app.include_router(admin_analytics.router, prefix=f"{settings.API_V1_STR}/admin/analytics", tags=["admin_analytics"])
-app.include_router(admin_migration.router, prefix=f"{settings.API_V1_STR}/admin/migration", tags=["admin_migration"])  # TEMP: delete after production migration
 
 # --- Public API Router Setup ---
 # Backward compatibility aliases (for existing frontend)
@@ -116,7 +116,12 @@ app.include_router(public_orders.router, prefix=f"{settings.API_V1_STR}/orders",
 app.include_router(public_reviews.router, prefix=f"{settings.API_V1_STR}/reviews", tags=["public_reviews"])
 app.include_router(public_cart.router, prefix=f"{settings.API_V1_STR}/cart", tags=["public_cart"])
 app.include_router(public_checkout.router, prefix=f"{settings.API_V1_STR}/checkout", tags=["public_checkout"])
+app.include_router(public_settings.router, prefix=f"{settings.API_V1_STR}/settings", tags=["public_settings"])
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Marvel Steel API"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}

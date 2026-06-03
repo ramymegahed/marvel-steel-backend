@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "fallback-secret-for-local-dev-only")
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8  # 8 hours
     
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://admin:admin@localhost:5432/marvel_steel")
@@ -18,7 +18,8 @@ class Settings(BaseSettings):
     
     # Telegram Notifications
     TELEGRAM_BOT_TOKEN: str | None = None
-    TELEGRAM_CHAT_ID: str | None = None
+    # Comma-separated list of chat IDs, e.g. "1871386592,-5152690575"
+    TELEGRAM_CHAT_IDS: str | None = None
     
     class Config:
         case_sensitive = True

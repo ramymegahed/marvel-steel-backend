@@ -1,39 +1,43 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
-from app.models.cart import Cart
-from app.models.product import Product, ProductSize
+from app.models.cart import Cart, CartItem
+from app.models.product import ProductSize
 from app.models.order import Order, OrderItem, OrderStatus
 from app.schemas.checkout import CheckoutConfirm, CheckoutCalculateResponse
 from app.schemas.cart import CartItemResponse
 
+def _load_cart_for_checkout(db: Session, cart_id: str) -> Cart:
+    """Fetch cart with all relationships pre-loaded in a single query."""
+    return (
+        db.query(Cart)
+        .options(
+            joinedload(Cart.items).joinedload(CartItem.product),
+            joinedload(Cart.items).joinedload(CartItem.size),
+        )
+        .filter(Cart.id == cart_id)
+        .first()
+    )
+
 def calculate_checkout(db: Session, cart_id: str) -> CheckoutCalculateResponse:
-    cart = db.query(Cart).filter(Cart.id == cart_id).first()
+    cart = _load_cart_for_checkout(db, cart_id)
     if not cart or not cart.items:
         raise HTTPException(status_code=400, detail="Cart is empty or not found")
 
     items_response = []
     subtotal = 0.0
     total_items = 0
-    shipping_fee = 0.0 # Setup for future logic
+    shipping_fee = 0.0
 
     for item in cart.items:
-        product = db.query(Product).filter(Product.id == item.product_id).first()
+        product = item.product
         if not product or not product.is_active:
-             raise HTTPException(status_code=400, detail=f"Product {item.product_id} is unavailable")
-             
-        size = None
-        item_price = 0.0
-        
-        if item.size_id:
-            size = db.query(ProductSize).filter(ProductSize.id == item.size_id).first()
-            if not size:
-                 raise HTTPException(status_code=400, detail=f"Size {item.size_id} is invalid for product {product.name}")
-            # DISABLED: Manufacture on demand — no stock management
-            # if size.stock_quantity < item.quantity:
-            #      raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name} (Size: {size.name})")
-            
-            item_price = size.discount_price if size.discount_price is not None else size.price
+            raise HTTPException(status_code=400, detail=f"Product {item.product_id} is unavailable")
 
+        size = item.size
+        if item.size_id and not size:
+            raise HTTPException(status_code=400, detail=f"Size {item.size_id} is invalid for product {product.name}")
+
+        item_price = (size.discount_price if size.discount_price is not None else size.price) if size else 0.0
         item_subtotal = item_price * item.quantity
         subtotal += item_subtotal
         total_items += item.quantity
@@ -51,22 +55,18 @@ def calculate_checkout(db: Session, cart_id: str) -> CheckoutCalculateResponse:
             added_at=item.added_at
         ))
 
-    final_total = subtotal + shipping_fee
-
     return CheckoutCalculateResponse(
         items=items_response,
         total_items=total_items,
         subtotal=subtotal,
         shipping_fee=shipping_fee,
-        final_total=final_total
+        final_total=subtotal + shipping_fee
     )
 
 def confirm_checkout(db: Session, cart_id: str, checkout_in: CheckoutConfirm) -> Order:
-    # 1. Calculate to ensure stock & validity right before processing
     calculation = calculate_checkout(db, cart_id)
-    cart = db.query(Cart).filter(Cart.id == cart_id).first()
+    cart = _load_cart_for_checkout(db, cart_id)
 
-    # 2. Create Order Header
     db_order = Order(
         customer_name=checkout_in.customer_name,
         phone=checkout_in.phone,
@@ -74,32 +74,14 @@ def confirm_checkout(db: Session, cart_id: str, checkout_in: CheckoutConfirm) ->
         payment_method=checkout_in.payment_method,
         notes=checkout_in.notes,
         total_price=calculation.final_total,
-        status=OrderStatus.pending  # Stock adjusts when status becomes 'confirmed' typically. Wait, specification says:
-                                     # "Create order and order_items records"
-                                     # "Deduct Stock" - The specs mentioned Deduct Stock during confirm step.
-                                     # The previous order_service._adjust_stock handles this upon moving to 'confirmed'.
-                                     # If we want immediate deduction on checkout, we can set it to Pending, but explicitly deduct.
-                                     # Let's align with the order_service logic: order_service deducts when status -> confirmed.
-                                     # If the requirement directly says "Deduct Stock during checkout confirm step", 
-                                     # we should either deduct it here manually, OR create the order as "confirmed" immediately.
-                                     # Let's explicitly deduct stock here to perfectly fulfill "Deduct Stock" requirement on checkout.
+        status=OrderStatus.pending,
     )
     db.add(db_order)
     db.flush()
 
-    # 3. Create Items & Deduct Stock
     for item in cart.items:
-        size = None
-        item_price = 0.0
-        
-        if item.size_id:
-            size = db.query(ProductSize).filter(ProductSize.id == item.size_id).first()
-            item_price = size.discount_price if size.discount_price is not None else size.price
-            
-            # DISABLED: Manufacture on demand — no stock deduction
-            # size.stock_quantity -= item.quantity
-            # db.add(size)
-
+        size = item.size
+        item_price = (size.discount_price if size.discount_price is not None else size.price) if size else 0.0
         db.add(OrderItem(
             order_id=db_order.id,
             product_id=item.product_id,
@@ -108,10 +90,7 @@ def confirm_checkout(db: Session, cart_id: str, checkout_in: CheckoutConfirm) ->
             price_at_purchase=item_price
         ))
 
-    # 4. Clear/Delete Cart
-    db.delete(cart) # Instead of clearing items, we just destroy the session cart completely
-
+    db.delete(cart)
     db.commit()
     db.refresh(db_order)
-    
     return db_order

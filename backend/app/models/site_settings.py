@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -19,4 +19,6 @@ class Review(Base):
     id = Column(Integer, primary_key=True, index=True)
     customer_name = Column(String, nullable=True)
     comment = Column(Text, nullable=False)
+    product_id = Column(Integer, nullable=True)   # optional FK — not enforced at DB level to survive product deletion
+    is_approved = Column(Boolean, nullable=False, server_default="false")
     created_at = Column(DateTime(timezone=True), server_default=func.now())

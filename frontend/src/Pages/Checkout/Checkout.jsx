@@ -5,6 +5,7 @@ import { Loader, Package, AlertTriangle, Smartphone, CreditCard, Wallet } from '
 import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useCart } from '../../Components/Context/Cartcontext';
 import { BASE_URL } from '../../App';
+import { publicApi } from '../../utils/apiClient';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const MOBILE_BREAKPOINT = 768;
@@ -334,7 +335,7 @@ const OrderSummary = React.memo(({ loadingCalc, checkoutSummary, items, totalPri
 
 OrderSummary.displayName = 'OrderSummary';
 
-const PaymentMethod = React.memo(({ selectedMethod, onMethodChange, t, language }) => {
+const PaymentMethod = React.memo(({ selectedMethod, onMethodChange, t, language, vodafoneCashNumber, instapayNumber }) => {
     const titleFont = useMemo(() => ({
         fontFamily: language === 'ar' ? 'Cairo, Tajawal, sans-serif' : 'Playfair Display, serif'
     }), [language]);
@@ -408,6 +409,9 @@ const PaymentMethod = React.memo(({ selectedMethod, onMethodChange, t, language 
                             <p className="text-sm sm:text-base text-[#2C2C2C] font-medium">{t.vodafoneCash}</p>
                         </div>
                         <p className="text-xs sm:text-sm text-[#2C2C2C]/70 mt-1">{t.vodafoneCashDesc}</p>
+                        {vodafoneCashNumber && (
+                            <p className="text-xs sm:text-sm font-semibold text-[#8B5E3C] mt-0.5">{vodafoneCashNumber}</p>
+                        )}
                     </div>
                 </div>
 
@@ -432,6 +436,9 @@ const PaymentMethod = React.memo(({ selectedMethod, onMethodChange, t, language 
                             <p className="text-sm sm:text-base text-[#2C2C2C] font-medium">{t.instapay}</p>
                         </div>
                         <p className="text-xs sm:text-sm text-[#2C2C2C]/70 mt-1">{t.instapayDesc}</p>
+                        {instapayNumber && (
+                            <p className="text-xs sm:text-sm font-semibold text-[#8B5E3C] mt-0.5">{instapayNumber}</p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -530,6 +537,7 @@ export default function Checkout() {
     const [errors, setErrors] = useState({});
     const [submitAttempted, setSubmitAttempted] = useState(false);
     const [orderPlaced, setOrderPlaced] = useState(false);
+    const [siteSettings, setSiteSettings] = useState({});
 
     // ─── Memoized Values ─────────────────────────────────────────────────────
     const t = useMemo(() => CHECKOUT_CONTENT[language], [language]);
@@ -557,6 +565,13 @@ export default function Checkout() {
         window.addEventListener('resize', handleResize, { passive: true });
         return () => window.removeEventListener('resize', handleResize);
     }, [handleResize]);
+
+    // ─── Fetch Site Settings (payment numbers) ───────────────────────────────
+    useEffect(() => {
+        publicApi.get('/api/v1/settings/')
+            .then(({ data }) => setSiteSettings(data))
+            .catch(() => {});
+    }, []);
 
     // ─── Fetch Checkout Calculation ──────────────────────────────────────────
     useEffect(() => {
@@ -760,6 +775,8 @@ export default function Checkout() {
                                 onMethodChange={handlePaymentMethodChange}
                                 t={t}
                                 language={language}
+                                vodafoneCashNumber={siteSettings.vodafone_cash_number}
+                                instapayNumber={siteSettings.instapay_number}
                             />
                         </motion.div>
 

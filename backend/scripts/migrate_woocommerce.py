@@ -290,11 +290,11 @@ def process_csv(db: Session, filepath: str, category_cache: dict, stats: dict):
         sale_price = parse_price(row.get("Sale price", ""))
         regular_price = parse_price(row.get("Regular price", ""))
 
-        # In WooCommerce: Regular price = original, Sale price = discounted
-        # In our schema: price = current price, discount_price = original (higher) price
+        # price = original/regular price (shown as strikethrough on frontend)
+        # discount_price = current sale price (what the customer actually pays)
         if sale_price is not None and regular_price is not None and regular_price > sale_price:
-            price = sale_price
-            discount_price = regular_price
+            price = regular_price
+            discount_price = sale_price
         elif sale_price is not None:
             price = sale_price
             discount_price = None

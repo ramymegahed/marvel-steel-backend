@@ -6,44 +6,40 @@ from app.schemas.order import OrderResponse
 logger = logging.getLogger(__name__)
 
 async def send_telegram_notification(order: OrderResponse):
-    """
-    Asynchronously sends a Telegram message when a new order is placed.
-    """
     bot_token = settings.TELEGRAM_BOT_TOKEN
-    chat_id = settings.TELEGRAM_CHAT_ID
-
-    if not bot_token or not chat_id:
-        logger.warning("Telegram Bot Token or Chat ID not configured. Skipping notification.")
+    if not bot_token:
+        logger.warning("Telegram Bot Token not configured — skipping notification")
         return
+
+    if not settings.TELEGRAM_CHAT_IDS:
+        logger.warning("TELEGRAM_CHAT_IDS not configured — skipping notification")
+        return
+
+    chat_ids = [cid.strip() for cid in settings.TELEGRAM_CHAT_IDS.split(",") if cid.strip()]
 
     message = (
         f"🚨 *New Order Received!* 🚨\n\n"
         f"📦 *Order ID:* `{order.id}`\n"
         f"👤 *Customer:* {order.customer_name}\n"
         f"📞 *Phone:* {order.phone}\n"
-        f"💵 *Total Amount:* ${order.total_price:.2f}\n"
+        f"💵 *Total Amount:* {order.total_price:.2f} EGP\n"
         f"🔢 *Items:* {len(order.items)}\n"
         f"📅 *Status:* {order.status.value}"
     )
 
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": message,
-        "parse_mode": "Markdown"
-    }
 
     try:
-        logger.info(f"Preparing to send Telegram notification to chat_id: {chat_id}")
-        
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, timeout=5.0)
-            response.raise_for_status()
-            logger.info(f"Telegram notification sent successfully for Order {order.id}")
-            
-    except httpx.HTTPStatusError as e:
-        logger.error(f"Telegram API returned an error status for Order {order.id}: {e.response.status_code} - {e.response.text}")
-    except httpx.RequestError as e:
-        logger.error(f"Failed to connect to Telegram API for Order {order.id}. Error: {e}")
+            for chat_id in chat_ids:
+                try:
+                    response = await client.post(url, json={
+                        "chat_id": chat_id,
+                        "text": message,
+                        "parse_mode": "Markdown",
+                    })
+                    response.raise_for_status()
+                except Exception as e:
+                    logger.error(f"Failed to send Telegram notification to {chat_id}: {e}")
     except Exception as e:
-        logger.error(f"Unexpected error sending Telegram notification: {e}")
+        logger.error(f"Telegram notification error: {e}")

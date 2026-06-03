@@ -10,6 +10,9 @@ router = APIRouter()
 def get_cart_id(x_cart_id: Optional[str] = Header(None)) -> Optional[str]:
     return x_cart_id
 
+def _empty_cart_response() -> CartResponse:
+    return CartResponse(id="", items=[], total_items=0, total_price=0.0, created_at=None, updated_at=None)
+
 @router.post("/items", response_model=CartResponse)
 def add_item_to_cart(
     item_in: CartItemCreate,
@@ -52,4 +55,6 @@ def clear_cart(
     db: Session = Depends(get_db)
 ):
     cart = cart_service.clear_cart(db, cart_id=cart_id)
+    if cart is None:
+        return _empty_cart_response()
     return cart_service.extract_cart_response(db, cart)

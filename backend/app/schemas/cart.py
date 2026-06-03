@@ -5,13 +5,13 @@ from datetime import datetime
 class CartItemBase(BaseModel):
     product_id: int
     size_id: Optional[int] = None
-    quantity: int = Field(default=1, ge=1)
+    quantity: int = Field(default=1, ge=1, le=100)
 
 class CartItemCreate(CartItemBase):
     pass
 
 class CartItemUpdate(BaseModel):
-    quantity: int = Field(default=1, ge=1)
+    quantity: int = Field(default=1, ge=1, le=100)
 
 class CartItemResponse(CartItemBase):
     id: int
@@ -30,8 +30,8 @@ class CartResponse(BaseModel):
     items: List[CartItemResponse] = []
     total_items: int
     total_price: float
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
