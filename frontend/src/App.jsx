@@ -1,7 +1,7 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-export const BASE_URL = "https://marvelsteel1.com/api";
+export { BASE_URL } from './config';
 
 import MainLayout from "./Layouts/MainLayout";
 import AdminLayout from "./Layouts/AdminLayout";

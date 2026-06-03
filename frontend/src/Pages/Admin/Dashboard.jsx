@@ -19,7 +19,6 @@ import { apiFetch } from '../../utils/apiClient';
 // ─── Constants ─────────────────────────────────────────────────────────────
 const MOBILE_BREAKPOINT = 768;
 const TABLET_BREAKPOINT = 1024;
-const AVG_ORDER_VALUE = 1500;
 
 // ─── Card Components ───────────────────────────────────────────────────────
 const Card = React.memo(({ children, className = '' }) => (
@@ -528,9 +527,9 @@ export default function Dashboard() {
                 currency: 'EGP',
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
-            }).format(dashboardData.total_orders * AVG_ORDER_VALUE),
+            }).format(dashboardData.total_revenue ?? 0),
             change: monthlyGrowth,
-            icon: DollarSign,
+            icon: TrendingUp,
             trend: monthlyGrowth.startsWith('+') ? 'up' : 'down',
         },
         {

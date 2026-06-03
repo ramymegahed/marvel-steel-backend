@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { BASE_URL } from '../App';
+import { BASE_URL } from '../config';
 
 // Public client — no auth, used by storefront (Cart, Checkout, LandingPage, etc.)
 export const publicApi = axios.create({ baseURL: BASE_URL });

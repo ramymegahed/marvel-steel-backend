@@ -10,11 +10,13 @@ router = APIRouter()
 
 @router.get("/", response_model=List[ProductResponse])
 def get_products(
-    skip: int = 0, limit: int = 100, category_id: Optional[int] = None,
+    skip: int = 0, limit: int = 100,
+    category_id: Optional[int] = None,
+    search: Optional[str] = None,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
-    return product_service.get_products(db, skip=skip, limit=limit, category_id=category_id)
+    return product_service.get_products(db, skip=skip, limit=limit, category_id=category_id, search=search)
 
 @router.post("/", response_model=ProductResponse)
 def create_product(

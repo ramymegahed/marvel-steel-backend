@@ -4,15 +4,16 @@ from app.models.order import Order, OrderStatus
 
 def get_monthly_revenue(db: Session):
     """
-    Sum of total_price for completed (delivered) orders grouped by month.
+    Sum of total_price for all non-cancelled orders grouped by month.
+    Cancelled orders are excluded because they represent no committed revenue.
     """
     month_expr = func.to_char(Order.created_at, 'YYYY-MM').label('month')
-    
+
     results = db.query(
         month_expr,
         func.sum(Order.total_price).label('revenue')
     ).filter(
-        Order.status == OrderStatus.delivered
+        Order.status != OrderStatus.cancelled
     ).group_by(
         month_expr
     ).order_by(

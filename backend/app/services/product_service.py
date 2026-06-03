@@ -49,7 +49,7 @@ def delete_category(db: Session, category_id: int):
     return {"message": "Category deleted"}
 
 # --- Product Logic ---
-def get_products(db: Session, skip: int = 0, limit: int = 100, category_id: int = None, size_id: int = None, active_only: bool = False):
+def get_products(db: Session, skip: int = 0, limit: int = 100, category_id: int = None, size_id: int = None, active_only: bool = False, search: str = None):
     query = db.query(Product)
     if active_only:
         query = query.filter(Product.is_active == True)
@@ -57,6 +57,8 @@ def get_products(db: Session, skip: int = 0, limit: int = 100, category_id: int 
         query = query.filter(Product.category_id == category_id)
     if size_id:
         query = query.filter(Product.sizes.any(ProductSize.id == size_id))
+    if search:
+        query = query.filter(Product.name.ilike(f"%{search}%"))
     return query.offset(skip).limit(limit).all()
 
 def get_product(db: Session, product_id: int):

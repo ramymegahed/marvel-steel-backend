@@ -45,12 +45,7 @@ const getFullImageUrl = (imagePath) => {
     // Clean the BASE_URL
     const baseUrl = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
 
-    // Construct the full URL
     const fullUrl = `${baseUrl}/${cleanPath}`;
-
-    // For debugging - remove in production
-    console.log('Image URL:', { original: imagePath, decoded: decodedPath, full: fullUrl });
-
     return fullUrl;
   } catch (error) {
     console.error('Error processing image URL:', error, imagePath);
@@ -1202,14 +1197,13 @@ export default function AdminProducts() {
   }, [apiFetch]);
 
   // ─── Fetch Products ────────────────────────────────────────────────────────
-  const fetchProducts = useCallback(async (skip = 0, limit = 20, append = false, categoryId = null) => {
+  const fetchProducts = useCallback(async (skip = 0, limit = 20, append = false, categoryId = null, search = '') => {
     setLoading(true);
     setError(null);
     try {
       let url = `/api/v1/admin/products/?skip=${skip}&limit=${limit}`;
-      if (categoryId) {
-        url += `&category_id=${categoryId}`;
-      }
+      if (categoryId) url += `&category_id=${categoryId}`;
+      if (search)     url += `&search=${encodeURIComponent(search)}`;
 
       const data = await apiFetch(url);
 
@@ -1261,17 +1255,20 @@ export default function AdminProducts() {
     }
   }, [fetchProducts, pagination.skip, pagination.limit, pagination.hasMore, loading]);
 
-  // ─── Filter Products ───────────────────────────────────────────────────────
-  const filteredProducts = useMemo(() => {
-    if (!searchTerm.trim()) return products;
+  // ─── Server-side search — debounced 400 ms ────────────────────────────────
+  const searchDebounceRef = useRef(null);
+  useEffect(() => {
+    clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      // Reset pagination and re-fetch with the new search term
+      setPagination(prev => ({ ...prev, skip: 0, hasMore: true }));
+      fetchProducts(0, pagination.limit, false, null, searchTerm.trim());
+    }, 400);
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const term = searchTerm.toLowerCase();
-    return products.filter(product =>
-      product.name?.toLowerCase().includes(term) ||
-      product.category?.name?.toLowerCase().includes(term) ||
-      product.id?.toString().includes(term)
-    );
-  }, [products, searchTerm]);
+  // filteredProducts is now just the server-filtered list
+  const filteredProducts = products;
 
   // ─── Form Validation ───────────────────────────────────────────────────────
   const validateForm = useCallback(() => {
@@ -1667,7 +1664,7 @@ export default function AdminProducts() {
             </div>
 
             {/* Load More */}
-            {pagination.hasMore && (
+            {pagination.hasMore && !searchTerm.trim() && (
               <div className="flex justify-center mt-8">
                 <button
                   onClick={handleLoadMore}

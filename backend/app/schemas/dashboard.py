@@ -9,3 +9,4 @@ class DashboardOverview(BaseModel):
     in_delivery_orders: int
     delivered_orders: int
     recent_orders: List[OrderResponse] = []
+    total_revenue: float = 0.0
