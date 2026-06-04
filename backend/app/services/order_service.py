@@ -39,7 +39,7 @@ def create_order(db: Session, order_in: OrderCreate):
             # if size_obj.stock_quantity < item_in.quantity:
             #      raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name} (Size: {size_obj.name})")
             
-            item_price += size_obj.discount_price if size_obj.discount_price is not None else size_obj.price
+            item_price += size_obj.discount_price if (size_obj.discount_price is not None and size_obj.discount_price > 0) else size_obj.price
 
         # The price should not be dependent on base price in product if the sizes have prices?
         # Typically base price + size additional price. We assume MVP: base product price is implicit in size or zero if sizes handle prices.
@@ -77,6 +77,12 @@ def create_order(db: Session, order_in: OrderCreate):
     db.commit()
     db.refresh(db_order)
     return db_order
+
+def delete_order(db: Session, order_id: int):
+    order = get_order(db, order_id)
+    db.delete(order)
+    db.commit()
+    return {"message": "Order deleted"}
 
 def update_order_status(db: Session, order_id: int, status_in: OrderUpdateStatus):
     order = get_order(db, order_id)

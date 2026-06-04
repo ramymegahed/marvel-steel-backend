@@ -11,7 +11,8 @@ import {
     Menu,
     X,
     Languages,
-    LogOut
+    LogOut,
+    AlertTriangle,
 } from 'lucide-react';
 import { useLanguage } from '../Components/Context/LanguageContext';
 import { useAdmin } from '../Components/Context/AdminContext';
@@ -202,7 +203,7 @@ export default function AdminLayout() {
     const [viewport, setViewport] = useState({ isMobile: false, isTablet: false });
 
     const { language, toggleLanguage } = useLanguage();
-    const { logout } = useAdmin();
+    const { logout, sessionWarning } = useAdmin();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -361,6 +362,20 @@ export default function AdminLayout() {
                     t={t}
                     currentDate={currentDate}
                 />
+
+                {sessionWarning && (
+                    <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-2 text-amber-800 text-sm">
+                        <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        <span>Your session expires in less than 15 minutes. Save your work and</span>
+                        <button
+                            onClick={handleLogout}
+                            className="underline font-medium hover:text-amber-900 focus:outline-none"
+                        >
+                            re-login
+                        </button>
+                        <span>to continue.</span>
+                    </div>
+                )}
 
                 <main className="flex-1 p-4 sm:p-6 lg:p-8">
                     <Outlet />

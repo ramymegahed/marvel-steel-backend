@@ -20,4 +20,8 @@ def authenticate_admin(db: Session, form_data: OAuth2PasswordRequestForm):
         )
     
     access_token = create_access_token(subject=admin.email)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "must_change_password": admin.must_change_password,
+    }

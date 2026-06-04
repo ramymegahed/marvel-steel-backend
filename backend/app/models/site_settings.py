@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Float, Text, Boolean, DateTime
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -11,6 +11,7 @@ class SiteSettings(Base):
     whatsapp_number = Column(String, nullable=True)
     delivery_time = Column(String, nullable=True)
     order_confirmation_message = Column(Text, nullable=True)
+    shipping_fee = Column(Float, nullable=False, default=0.0, server_default="0")
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 class Review(Base):

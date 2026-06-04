@@ -88,3 +88,16 @@ alembic.ini.bak
 *.save
 of\ -i*
 lsof\ *
+
+# Development artifacts
+error.log
+alembic_out.txt
+alembic_upgrade.txt
+fix_structure.py
+backend/api_docs_dump.md
+backend/dump_api_docs.py
+backend/test_pricing.py
+backend/*.csv
+backend/*.csv.csv
+backend/create_superuser.py
+backend/scripts/migrate_woocommerce.py

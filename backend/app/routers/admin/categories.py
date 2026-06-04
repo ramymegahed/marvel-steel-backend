@@ -4,7 +4,7 @@ from typing import List, Optional
 from app.core.dependencies import get_db, get_current_admin
 from app.models.admin import Admin
 from app.schemas.category import CategoryResponse, CategoryCreate, CategoryUpdate
-from app.services import product_service
+from app.services import category_service
 from app.utils.file_upload import save_upload_file
 
 router = APIRouter()
@@ -15,7 +15,7 @@ def get_categories(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
-    return product_service.get_categories(db, skip=skip, limit=limit)
+    return category_service.get_categories(db, skip=skip, limit=limit)
 
 @router.post("/", response_model=CategoryResponse)
 def create_category(
@@ -38,7 +38,7 @@ def create_category(
         is_active=is_active,
         image_url=image_url
     )
-    return product_service.create_category(db, category_in=category_in)
+    return category_service.create_category(db, category_in=category_in)
 
 @router.put("/{category_id}", response_model=CategoryResponse)
 def update_category(
@@ -62,7 +62,7 @@ def update_category(
         update_data["image_url"] = image_url
         
     category_in = CategoryUpdate(**update_data)
-    return product_service.update_category(db, category_id=category_id, category_in=category_in)
+    return category_service.update_category(db, category_id=category_id, category_in=category_in)
 
 @router.delete("/{category_id}")
 def delete_category(
@@ -70,4 +70,4 @@ def delete_category(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
-    return product_service.delete_category(db, category_id=category_id)
+    return category_service.delete_category(db, category_id=category_id)

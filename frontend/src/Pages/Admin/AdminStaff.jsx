@@ -4,39 +4,10 @@ import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useAdmin } from '../../Components/Context/AdminContext';
 import { BASE_URL } from '../../App';
 import { apiFetch } from '../../utils/apiClient';
-
-// ─── Card Component ──────────────────────────────────────────────────────────
-const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl shadow-sm border border-[#2C2C2C]/10 ${className}`}>
-    {children}
-  </div>
-);
-
-const CardHeader = ({ children }) => (
-  <div className="p-6 pb-0">{children}</div>
-);
-
-const CardTitle = ({ children }) => (
-  <h3 className="text-lg font-semibold text-[#2C2C2C]" style={{ fontFamily: 'Playfair Display, serif' }}>
-    {children}
-  </h3>
-);
-
-const CardContent = ({ children }) => (
-  <div className="p-6 pt-0">{children}</div>
-);
-
-// ─── Helper function to format date ──────────────────────────────────────────
-const formatDate = (dateString, language) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+import { Card, CardHeader, CardTitle, CardContent } from '../../Components/Admin/Card';
+import StatusBadge from '../../Components/Admin/StatusBadge';
+import { formatCurrency, formatDate } from '../../utils/adminUtils';
+import useViewport from '../../hooks/useViewport';
 
 // ─── Role Badge Component ────────────────────────────────────────────────────
 const RoleBadge = ({ role, t }) => {

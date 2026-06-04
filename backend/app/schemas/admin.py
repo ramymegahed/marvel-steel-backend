@@ -17,14 +17,20 @@ class AdminUpdate(BaseModel):
 
 class AdminResponse(AdminBase):
     id: int
+    must_change_password: bool
     created_at: datetime
 
     class Config:
         from_attributes = True
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+    must_change_password: bool = False
 
 class TokenData(BaseModel):
     email: Optional[str] = None

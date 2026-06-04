@@ -4,7 +4,7 @@ from app.models.product import Product
 from app.models.order import Order, OrderStatus
 
 def get_dashboard_summary(db: Session):
-    total_products = db.query(Product).count()
+    total_products = db.query(Product).filter(Product.is_active == True).count()
     total_orders = db.query(Order).count()
     new_orders = db.query(Order).filter(Order.status == OrderStatus.pending).count()
     in_delivery_orders = db.query(Order).filter(Order.status == OrderStatus.in_delivery).count()

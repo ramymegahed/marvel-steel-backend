@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Trash2, ShoppingBag, Minus, Plus, Loader, Package } from 'lucide-react';
+import { Trash2, ShoppingBag, Minus, Plus, Loader, Package, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useCart } from '../../Components/Context/Cartcontext';
 import { BASE_URL } from '../../App';
@@ -36,6 +36,8 @@ const fadeInUp = {
 const CART_CONTENT = {
   en: {
     title: 'Shopping Cart',
+    unavailableWarning: 'Some items in your cart are no longer available. Please remove them before checking out.',
+    unavailableItem: 'Unavailable',
     emptyCart: {
       title: 'Your Cart is Empty',
       subtitle: 'Add some beautiful furniture to your cart!',
@@ -57,6 +59,8 @@ const CART_CONTENT = {
   },
   ar: {
     title: 'سلة التسوق',
+    unavailableWarning: 'بعض المنتجات في سلتك لم تعد متاحة. يرجى إزالتها قبل الدفع.',
+    unavailableItem: 'غير متاح',
     emptyCart: {
       title: 'سلتك فارغة',
       subtitle: 'أضف بعض الأثاث الجميل إلى سلتك!',
@@ -117,7 +121,7 @@ const EmptyCart = React.memo(({ t, language }) => {
 
 EmptyCart.displayName = 'EmptyCart';
 
-const CartItem = React.memo(({ item, index, t, language, onUpdate, onRemove, compact = false }) => {
+const CartItem = React.memo(({ item, index, t, language, onUpdate, onRemove, compact = false, isUnavailable = false }) => {
   const imgSrc = useMemo(() => getItemImage(item), [item]);
   const titleFont = useMemo(() => ({
     fontFamily: language === 'ar' ? 'Cairo, Tajawal, sans-serif' : 'inherit'
@@ -145,8 +149,14 @@ const CartItem = React.memo(({ item, index, t, language, onUpdate, onRemove, com
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: ANIMATION_DURATION, delay: index * ITEM_DELAY_INCREMENT }}
-      className="bg-white p-4 sm:p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
+      className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow ${isUnavailable ? 'border-2 border-red-300 opacity-75' : ''}`}
     >
+      {isUnavailable && (
+        <div className="flex items-center gap-1.5 mb-3 text-red-600 text-xs font-medium">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          {t.unavailableItem}
+        </div>
+      )}
       <div className={`flex gap-${compact ? '4' : '6'}`}>
         {/* Product image */}
         <div className={`${compact ? 'w-20 h-20' : 'w-28 h-28 sm:w-32 sm:h-32'} shrink-0 rounded-xl overflow-hidden bg-[#F5F1E8]`}>
@@ -232,7 +242,7 @@ const CartItem = React.memo(({ item, index, t, language, onUpdate, onRemove, com
 
 CartItem.displayName = 'CartItem';
 
-const OrderSummary = React.memo(({ t, totalPrice, onCheckout, onContinue, stickyClass = '' }) => {
+const OrderSummary = React.memo(({ t, totalPrice, onCheckout, onContinue, stickyClass = '', hasUnavailable = false }) => {
   const titleFont = useMemo(() => ({
     fontFamily: t.language === 'ar' ? 'Cairo, Tajawal, sans-serif' : 'Playfair Display, serif'
   }), [t.language]);
@@ -256,10 +266,18 @@ const OrderSummary = React.memo(({ t, totalPrice, onCheckout, onContinue, sticky
         <span>{t.total}</span>
         <span className="text-[#8B5E3C] font-bold">{t.currency} {totalPrice.toLocaleString()}</span>
       </div>
+      {hasUnavailable && (
+        <div className="flex items-center gap-2 mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs">
+          <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
+          {t.unavailableWarning}
+        </div>
+      )}
       <button
         onClick={onCheckout}
-        className="w-full py-3.5 sm:py-4 bg-[#8B5E3C] text-white rounded-xl hover:bg-[#5C3A21] transition-colors mb-3 text-sm sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-[#8B5E3C] focus:ring-offset-2"
+        disabled={hasUnavailable}
+        className={`w-full py-3.5 sm:py-4 text-white rounded-xl transition-colors mb-3 text-sm sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-[#8B5E3C] focus:ring-offset-2 ${hasUnavailable ? 'bg-[#8B5E3C]/40 cursor-not-allowed' : 'bg-[#8B5E3C] hover:bg-[#5C3A21]'}`}
         aria-label={t.proceedToCheckout}
+        aria-disabled={hasUnavailable}
       >
         {t.proceedToCheckout}
       </button>
@@ -282,6 +300,7 @@ export default function Cart() {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const { items, totalPrice, loading, updateItem, removeItem } = useCart();
+  const hasUnavailable = items.some(item => item.is_available === false);
   const [viewport, setViewport] = useState({ isMobile: false, isTablet: false });
 
   // Scroll to top on mount
@@ -393,6 +412,7 @@ export default function Cart() {
                 onUpdate={updateItem}
                 onRemove={removeItem}
                 compact
+                isUnavailable={item.is_available === false}
               />
             ))}
           </div>
@@ -404,6 +424,7 @@ export default function Cart() {
               onCheckout={handleCheckout}
               onContinue={() => { }}
               stickyClass="shadow-lg"
+              hasUnavailable={hasUnavailable}
             />
           </div>
         </div>
@@ -432,6 +453,7 @@ export default function Cart() {
           language={language}
           onUpdate={updateItem}
           onRemove={removeItem}
+          isUnavailable={item.is_available === false}
         />
       ))}
     </div>
@@ -461,6 +483,7 @@ export default function Cart() {
               onCheckout={handleCheckout}
               onContinue={() => { }}
               stickyClass={`sticky ${stickyOffset}`}
+              hasUnavailable={hasUnavailable}
             />
           </motion.div>
         </div>

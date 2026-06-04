@@ -24,6 +24,7 @@ class OrderItemResponse(OrderItemBase):
 
 class OrderBase(BaseModel):
     customer_name: str
+    customer_email: Optional[str] = None
     phone: str
     address: str
     payment_method: PaymentMethod

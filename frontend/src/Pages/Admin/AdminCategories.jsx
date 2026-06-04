@@ -4,17 +4,10 @@ import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useAdmin } from '../../Components/Context/AdminContext';
 import { BASE_URL } from '../../App';
 import { apiFetch } from '../../utils/apiClient';
-
-// ─── Shared UI Components ─────────────────────────────────────────────────────
-const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl shadow-sm border border-[#2C2C2C]/10 ${className}`}>
-    {children}
-  </div>
-);
-
-const CardContent = ({ children, className = '' }) => (
-  <div className={`p-6 pt-0 ${className}`}>{children}</div>
-);
+import { Card, CardHeader, CardTitle, CardContent } from '../../Components/Admin/Card';
+import StatusBadge from '../../Components/Admin/StatusBadge';
+import { formatCurrency, formatDate } from '../../utils/adminUtils';
+import useViewport from '../../hooks/useViewport';
 
 // ─── Delete Confirmation Modal ───────────────────────────────────────────────
 const DeleteConfirmationModal = ({

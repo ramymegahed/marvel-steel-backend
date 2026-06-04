@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.core.config import settings
 from app.models.admin import Admin, AdminRole
+from app.models.revoked_token import RevokedToken
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/admin/login")
 
@@ -25,11 +26,12 @@ def get_current_admin(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
+        jti: str = payload.get("jti")
         if email is None:
+            raise credentials_exception
+        if jti and db.query(RevokedToken).filter(RevokedToken.jti == jti).first():
             raise credentials_exception
     except JWTError:
         raise credentials_exception

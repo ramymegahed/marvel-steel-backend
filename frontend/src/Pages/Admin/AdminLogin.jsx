@@ -33,9 +33,12 @@ export default function AdminLogin() {
                 });
 
                 if (result.success) {
-                    // Store email for display purposes
                     localStorage.setItem('adminEmail', values.username);
-                    navigate('/admin');
+                    if (result.data?.must_change_password) {
+                        navigate('/admin/change-password');
+                    } else {
+                        navigate('/admin');
+                    }
                 } else {
                     setFieldError('general', result.error);
                 }

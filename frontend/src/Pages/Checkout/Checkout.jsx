@@ -47,6 +47,7 @@ const CHECKOUT_CONTENT = {
         subtitle: 'Complete your order',
         contactInfo: 'Contact Information',
         customerName: 'Full Name',
+        email: 'Email Address (Optional)',
         phoneNumber: 'Phone Number',
         address: 'Address (including city)',
         notes: 'Notes (Optional)',
@@ -82,6 +83,7 @@ const CHECKOUT_CONTENT = {
         subtitle: 'أكمل طلبك',
         contactInfo: 'معلومات الاتصال',
         customerName: 'الاسم الكامل',
+        email: 'البريد الإلكتروني (اختياري)',
         phoneNumber: 'رقم الهاتف',
         address: 'العنوان (شامل المدينة)',
         notes: 'ملاحظات (اختياري)',
@@ -472,6 +474,17 @@ const ContactInfoForm = React.memo(({ formData, errors, submitAttempted, handleI
                 />
 
                 <FormInput
+                    label={t.email}
+                    name="customer_email"
+                    type="email"
+                    value={formData.customer_email}
+                    onChange={handleInputChange}
+                    autoComplete="email"
+                    language={language}
+                    submitAttempted={submitAttempted}
+                />
+
+                <FormInput
                     label={t.phoneNumber}
                     name="phone"
                     type="tel"
@@ -530,6 +543,7 @@ export default function Checkout() {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(PAYMENT_METHODS.CASH_ON_DELIVERY);
     const [formData, setFormData] = useState({
         customer_name: '',
+        customer_email: '',
         phone: '',
         address: '',
         notes: '',
@@ -665,6 +679,7 @@ export default function Checkout() {
                 },
                 body: JSON.stringify({
                     customer_name: formData.customer_name,
+                    customer_email: formData.customer_email || null,
                     phone: formData.phone,
                     address: formData.address,
                     payment_method: selectedPaymentMethod,
@@ -851,6 +866,8 @@ export default function Checkout() {
                                     onMethodChange={handlePaymentMethodChange}
                                     t={t}
                                     language={language}
+                                    vodafoneCashNumber={siteSettings.vodafone_cash_number}
+                                    instapayNumber={siteSettings.instapay_number}
                                 />
                             </motion.div>
                         </div>

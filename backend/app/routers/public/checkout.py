@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Header, BackgroundTasks
+from fastapi import APIRouter, Depends, Header, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db
+from app.core.limiter import limiter
 from app.schemas.checkout import CheckoutConfirm, CheckoutCalculateResponse
 from app.schemas.order import OrderResponse
 from app.services import checkout_service
@@ -14,16 +15,18 @@ def get_cart_id(x_cart_id: str = Header(...)) -> str:
 @router.post("/calculate", response_model=CheckoutCalculateResponse)
 def calculate_checkout_totals(
     cart_id: str = Depends(get_cart_id),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     return checkout_service.calculate_checkout(db, cart_id)
 
 @router.post("/confirm", response_model=OrderResponse)
+@limiter.limit("10/minute")
 def confirm_checkout_order(
+    request: Request,
     checkout_in: CheckoutConfirm,
     background_tasks: BackgroundTasks,
     cart_id: str = Depends(get_cart_id),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     order = checkout_service.confirm_checkout(db, cart_id, checkout_in)
     order_resp = OrderResponse.model_validate(order)

@@ -1,42 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Save, Check, Phone, Truck, MessageSquare, Loader, AlertCircle } from 'lucide-react';
+import { Save, Check, Phone, Truck, MessageSquare, Loader, AlertCircle, Package } from 'lucide-react';
 import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useAdmin } from '../../Components/Context/AdminContext';
 import { BASE_URL } from '../../App';
 import { apiFetch } from '../../utils/apiClient';
-
-// ─── Card Component ──────────────────────────────────────────────────────────
-const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl shadow-sm border border-[#2C2C2C]/10 ${className}`}>
-    {children}
-  </div>
-);
-
-const CardHeader = ({ children }) => (
-  <div className="p-6 pb-0">{children}</div>
-);
-
-const CardTitle = ({ children }) => (
-  <h3 className="text-lg font-semibold text-[#2C2C2C]" style={{ fontFamily: 'Playfair Display, serif' }}>
-    {children}
-  </h3>
-);
-
-const CardContent = ({ children }) => (
-  <div className="p-6 pt-0">{children}</div>
-);
-
-// ─── Helper function to format date ──────────────────────────────────────────
-const formatDate = (dateString, language) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+import { Card, CardHeader, CardTitle, CardContent } from '../../Components/Admin/Card';
+import StatusBadge from '../../Components/Admin/StatusBadge';
+import { formatCurrency, formatDate } from '../../utils/adminUtils';
+import useViewport from '../../hooks/useViewport';
 
 // ─── Settings Input Component ────────────────────────────────────────────────
 const SettingsInput = ({
@@ -143,6 +114,7 @@ export default function AdminSettings() {
     whatsapp_number: '',
     delivery_time: '',
     order_confirmation_message: '',
+    shipping_fee: 0,
     id: null,
     updated_at: null
   });
@@ -171,7 +143,8 @@ export default function AdminSettings() {
       sections: {
         payment: 'Payment Settings',
         contact: 'Contact Settings',
-        order: 'Order Settings'
+        order: 'Order Settings',
+        shipping: 'Shipping Settings'
       },
       labels: {
         vodafone_cash: 'Vodafone Cash Number',
@@ -183,14 +156,12 @@ export default function AdminSettings() {
         delivery_time: 'Delivery Time',
         delivery_time_placeholder: 'e.g., 3-5 business days',
         order_confirmation: 'Order Confirmation Message',
-        order_confirmation_placeholder: 'Enter the message sent to customers after order confirmation'
+        order_confirmation_placeholder: 'Enter the message sent to customers after order confirmation',
+        shipping_fee: 'Shipping Fee (EGP)',
+        shipping_fee_placeholder: 'e.g., 50'
       },
       errors: {
-        vodafone_cash_required: 'Vodafone Cash number is required',
-        instapay_required: 'Instapay number is required',
-        whatsapp_required: 'WhatsApp number is required',
-        delivery_time_required: 'Delivery time is required',
-        order_confirmation_required: 'Order confirmation message is required'
+        shipping_fee_invalid: 'Shipping fee must be 0 or more'
       }
     },
     ar: {
@@ -205,7 +176,8 @@ export default function AdminSettings() {
       sections: {
         payment: 'إعدادات الدفع',
         contact: 'إعدادات الاتصال',
-        order: 'إعدادات الطلبات'
+        order: 'إعدادات الطلبات',
+        shipping: 'إعدادات الشحن'
       },
       labels: {
         vodafone_cash: 'رقم فودافون كاش',
@@ -217,14 +189,12 @@ export default function AdminSettings() {
         delivery_time: 'وقت التوصيل',
         delivery_time_placeholder: 'مثال: 3-5 أيام عمل',
         order_confirmation: 'رسالة تأكيد الطلب',
-        order_confirmation_placeholder: 'أدخل الرسالة المرسلة للعملاء بعد تأكيد الطلب'
+        order_confirmation_placeholder: 'أدخل الرسالة المرسلة للعملاء بعد تأكيد الطلب',
+        shipping_fee: 'رسوم الشحن (جنيه)',
+        shipping_fee_placeholder: 'مثال: 50'
       },
       errors: {
-        vodafone_cash_required: 'رقم فودافون كاش مطلوب',
-        instapay_required: 'رقم إنستاباي مطلوب',
-        whatsapp_required: 'رقم الواتساب مطلوب',
-        delivery_time_required: 'وقت التوصيل مطلوب',
-        order_confirmation_required: 'رسالة تأكيد الطلب مطلوبة'
+        shipping_fee_invalid: 'يجب أن تكون رسوم الشحن 0 أو أكثر'
       }
     }
   }), []);
@@ -271,26 +241,13 @@ export default function AdminSettings() {
   // ─── Form Validation ───────────────────────────────────────────────────────
   const validateForm = useCallback(() => {
     const errors = {};
-
-    if (!settings.vodafone_cash_number?.trim()) {
-      errors.vodafone_cash_number = t.errors.vodafone_cash_required;
+    const fee = parseFloat(settings.shipping_fee);
+    if (isNaN(fee) || fee < 0) {
+      errors.shipping_fee = t.errors.shipping_fee_invalid;
     }
-    if (!settings.instapay_number?.trim()) {
-      errors.instapay_number = t.errors.instapay_required;
-    }
-    if (!settings.whatsapp_number?.trim()) {
-      errors.whatsapp_number = t.errors.whatsapp_required;
-    }
-    if (!settings.delivery_time?.trim()) {
-      errors.delivery_time = t.errors.delivery_time_required;
-    }
-    if (!settings.order_confirmation_message?.trim()) {
-      errors.order_confirmation_message = t.errors.order_confirmation_required;
-    }
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [settings, t.errors]);
+  }, [settings.shipping_fee, t.errors]);
 
   // ─── Handle Input Change ───────────────────────────────────────────────────
   const handleInputChange = useCallback((field, value) => {
@@ -315,7 +272,8 @@ export default function AdminSettings() {
           instapay_number: settings.instapay_number,
           whatsapp_number: settings.whatsapp_number,
           delivery_time: settings.delivery_time,
-          order_confirmation_message: settings.order_confirmation_message
+          order_confirmation_message: settings.order_confirmation_message,
+          shipping_fee: parseFloat(settings.shipping_fee) || 0
         })
       });
 
@@ -433,6 +391,20 @@ export default function AdminSettings() {
                 placeholder={t.labels.whatsapp_placeholder}
                 icon={Phone}
                 error={formErrors.whatsapp_number}
+                language={language}
+              />
+            </SettingsSection>
+
+            {/* Shipping Settings */}
+            <SettingsSection title={t.sections.shipping}>
+              <SettingsInput
+                label={t.labels.shipping_fee}
+                value={settings.shipping_fee ?? 0}
+                onChange={(val) => handleInputChange('shipping_fee', val)}
+                type="number"
+                placeholder={t.labels.shipping_fee_placeholder}
+                icon={Package}
+                error={formErrors.shipping_fee}
                 language={language}
               />
             </SettingsSection>

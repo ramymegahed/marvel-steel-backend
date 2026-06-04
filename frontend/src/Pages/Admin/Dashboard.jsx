@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { DollarSign, Package, ShoppingCart, TrendingUp, Loader, AlertCircle } from 'lucide-react';
+import { Package, ShoppingCart, TrendingUp, Loader, AlertCircle } from 'lucide-react';
 import {
     BarChart,
     Bar,
@@ -15,67 +15,10 @@ import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useAdmin } from '../../Components/Context/AdminContext';
 import { BASE_URL } from '../../App';
 import { apiFetch } from '../../utils/apiClient';
-
-// ─── Constants ─────────────────────────────────────────────────────────────
-const MOBILE_BREAKPOINT = 768;
-const TABLET_BREAKPOINT = 1024;
-
-// ─── Card Components ───────────────────────────────────────────────────────
-const Card = React.memo(({ children, className = '' }) => (
-    <div className={`bg-white rounded-xl shadow-sm border border-[#2C2C2C]/10 ${className}`}>
-        {children}
-    </div>
-));
-
-Card.displayName = 'Card';
-
-const CardHeader = React.memo(({ children }) => (
-    <div className="p-6 pb-0">{children}</div>
-));
-
-CardHeader.displayName = 'CardHeader';
-
-const CardTitle = React.memo(({ children }) => (
-    <h3 className="text-lg font-semibold text-[#2C2C2C]" style={{ fontFamily: 'Playfair Display, serif' }}>
-        {children}
-    </h3>
-));
-
-CardTitle.displayName = 'CardTitle';
-
-const CardContent = React.memo(({ children }) => (
-    <div className="p-6 pt-0">{children}</div>
-));
-
-CardContent.displayName = 'CardContent';
-
-// ─── Status Badge Component ────────────────────────────────────────────────
-const StatusBadge = React.memo(({ status, t }) => {
-    const getStatusColor = useCallback(() => {
-        switch (status.toLowerCase()) {
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-            case 'processing':
-                return 'bg-blue-100 text-blue-800 border-blue-200';
-            case 'shipped':
-                return 'bg-purple-100 text-purple-800 border-purple-200';
-            case 'delivered':
-                return 'bg-green-100 text-green-800 border-green-200';
-            case 'cancelled':
-                return 'bg-red-100 text-red-800 border-red-200';
-            default:
-                return 'bg-gray-100 text-gray-800 border-gray-200';
-        }
-    }, [status]);
-
-    return (
-        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor()}`}>
-            {t.status[status.toLowerCase()] || status}
-        </span>
-    );
-});
-
-StatusBadge.displayName = 'StatusBadge';
+import { Card, CardHeader, CardTitle, CardContent } from '../../Components/Admin/Card';
+import StatusBadge from '../../Components/Admin/StatusBadge';
+import { formatCurrency, formatDate } from '../../utils/adminUtils';
+import useViewport from '../../hooks/useViewport';
 
 // ─── Stat Card Component ───────────────────────────────────────────────────
 const StatCard = React.memo(({ stat, content, language }) => {
@@ -107,23 +50,6 @@ StatCard.displayName = 'StatCard';
 
 // ─── Recent Orders Table ───────────────────────────────────────────────────
 const RecentOrdersTable = React.memo(({ orders, content, language }) => {
-    const formatCurrency = useCallback((amount) => {
-        return new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en-US', {
-            style: 'currency',
-            currency: 'EGP',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount);
-    }, [language]);
-
-    const formatDate = useCallback((dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-        });
-    }, [language]);
 
     if (orders.length === 0) {
         return <p className="text-center text-[#2C2C2C]/70 py-4 sm:py-8">{content.noRecentOrders}</p>;
@@ -160,7 +86,7 @@ const RecentOrdersTable = React.memo(({ orders, content, language }) => {
                                 {formatCurrency(order.total_price)}
                             </td>
                             <td className="py-3 px-4">
-                                <StatusBadge status={order.status} t={content} />
+                                <StatusBadge status={order.status} labels={content.status} />
                             </td>
                             <td className="py-3 px-4 text-xs sm:text-sm text-[#2C2C2C]/70">
                                 {formatDate(order.created_at)}
@@ -177,23 +103,6 @@ RecentOrdersTable.displayName = 'RecentOrdersTable';
 
 // ─── Mobile Recent Orders ──────────────────────────────────────────────────
 const MobileRecentOrders = React.memo(({ orders, content, language }) => {
-    const formatCurrency = useCallback((amount) => {
-        return new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en-US', {
-            style: 'currency',
-            currency: 'EGP',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount);
-    }, [language]);
-
-    const formatDate = useCallback((dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-        });
-    }, [language]);
 
     if (orders.length === 0) {
         return <p className="text-center text-[#2C2C2C]/70 py-4">{content.noRecentOrders}</p>;
@@ -205,7 +114,7 @@ const MobileRecentOrders = React.memo(({ orders, content, language }) => {
                 <div key={order.id} className="border-b border-[#2C2C2C]/10 last:border-0 pb-4 last:pb-0">
                     <div className="flex justify-between items-start mb-2">
                         <span className="text-sm font-medium text-[#2C2C2C]">#{order.id}</span>
-                        <StatusBadge status={order.status} t={content} />
+                        <StatusBadge status={order.status} labels={content.status} />
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
@@ -270,7 +179,7 @@ const RevenueChart = React.memo(({ data, content, language, viewport, chartMargi
             <CardTitle>{content.charts.revenue}</CardTitle>
         </CardHeader>
         <CardContent>
-            <div className={`h-${chartHeight}`}>
+            <div style={{ height: `${chartHeight * 4}px` }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data} margin={chartMargin}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E8DCC8" />
@@ -317,7 +226,7 @@ const OrdersChart = React.memo(({ data, content, viewport, chartMargin, chartHei
             <CardTitle>{content.charts.orders}</CardTitle>
         </CardHeader>
         <CardContent>
-            <div className={`h-${chartHeight}`}>
+            <div style={{ height: `${chartHeight * 4}px` }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={data} margin={chartMargin}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E8DCC8" />
@@ -374,8 +283,8 @@ const DASHBOARD_CONTENT = {
         },
         status: {
             pending: 'Pending',
-            processing: 'Processing',
-            shipped: 'Shipped',
+            confirmed: 'Confirmed',
+            in_delivery: 'In Delivery',
             delivered: 'Delivered',
             cancelled: 'Cancelled',
         },
@@ -411,8 +320,8 @@ const DASHBOARD_CONTENT = {
         },
         status: {
             pending: 'قيد الانتظار',
-            processing: 'قيد المعالجة',
-            shipped: 'تم الشحن',
+            confirmed: 'مؤكد',
+            in_delivery: 'قيد التوصيل',
             delivered: 'تم التوصيل',
             cancelled: 'ملغي',
         },
@@ -472,17 +381,13 @@ export default function Dashboard() {
     const fetchDashboardData = useCallback(async () => {
         setLoading(true);
         setError(null);
-
         const controller = new AbortController();
-
         try {
-            // Fetch all dashboard data in parallel
             const [dashboard, revenue, orders] = await Promise.all([
                 apiFetch('/api/v1/admin/dashboard/', { signal: controller.signal }),
                 apiFetch('/api/v1/admin/analytics/monthly-revenue', { signal: controller.signal }),
                 apiFetch('/api/v1/admin/analytics/monthly-orders', { signal: controller.signal }),
             ]);
-
             setDashboardData(dashboard);
             setMonthlyRevenue(revenue);
             setMonthlyOrders(orders);
@@ -493,15 +398,12 @@ export default function Dashboard() {
         } finally {
             setLoading(false);
         }
-
         return () => controller.abort();
-    }, [apiFetch]);
+    }, []);
 
     // Initial fetch
     useEffect(() => {
-        const abortController = new AbortController();
         fetchDashboardData();
-        return () => abortController.abort();
     }, [fetchDashboardData]);
 
     // ─── Calculate Monthly Growth ──────────────────────────────────────────────
@@ -590,7 +492,7 @@ export default function Dashboard() {
 
     // ─── Loading State ─────────────────────────────────────────────────────────
     if (loading) {
-        return <LoadingState content={content} />;
+        return <LoadingState contenlabels={content.status} />;
     }
 
     // ─── Error State ───────────────────────────────────────────────────────────
@@ -598,7 +500,7 @@ export default function Dashboard() {
         return (
             <ErrorState
                 error={error}
-                content={content}
+                contenlabels={content.status}
                 onRetry={fetchDashboardData}
             />
         );
@@ -623,7 +525,7 @@ export default function Dashboard() {
                             <StatCard
                                 key={stat.id}
                                 stat={stat}
-                                content={content}
+                                contenlabels={content.status}
                                 language={language}
                             />
                         ))}
@@ -634,7 +536,7 @@ export default function Dashboard() {
                         {/* Revenue Chart */}
                         <RevenueChart
                             data={monthlyRevenue}
-                            content={content}
+                            contenlabels={content.status}
                             language={language}
                             viewport={viewport}
                             chartMargin={{ top: 5, right: 5, bottom: 20, left: 0 }}
@@ -644,7 +546,7 @@ export default function Dashboard() {
                         {/* Orders Chart */}
                         <OrdersChart
                             data={monthlyOrders}
-                            content={content}
+                            contenlabels={content.status}
                             viewport={viewport}
                             chartMargin={{ top: 5, right: 5, bottom: 20, left: 0 }}
                             chartHeight={64}
@@ -659,7 +561,7 @@ export default function Dashboard() {
                         <CardContent>
                             <MobileRecentOrders
                                 orders={dashboardData.recent_orders}
-                                content={content}
+                                contenlabels={content.status}
                                 language={language}
                             />
                         </CardContent>
@@ -688,7 +590,7 @@ export default function Dashboard() {
                             <StatCard
                                 key={stat.id}
                                 stat={stat}
-                                content={content}
+                                contenlabels={content.status}
                                 language={language}
                             />
                         ))}
@@ -698,7 +600,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 gap-5 mb-6">
                         <RevenueChart
                             data={monthlyRevenue}
-                            content={content}
+                            contenlabels={content.status}
                             language={language}
                             viewport={viewport}
                             chartMargin={chartMargin}
@@ -706,7 +608,7 @@ export default function Dashboard() {
                         />
                         <OrdersChart
                             data={monthlyOrders}
-                            content={content}
+                            contenlabels={content.status}
                             viewport={viewport}
                             chartMargin={chartMargin}
                             chartHeight={64}
@@ -721,7 +623,7 @@ export default function Dashboard() {
                         <CardContent>
                             <RecentOrdersTable
                                 orders={dashboardData.recent_orders}
-                                content={content}
+                                contenlabels={content.status}
                                 language={language}
                             />
                         </CardContent>
@@ -749,7 +651,7 @@ export default function Dashboard() {
                         <StatCard
                             key={stat.id}
                             stat={stat}
-                            content={content}
+                            contenlabels={content.status}
                             language={language}
                         />
                     ))}
@@ -759,7 +661,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                     <RevenueChart
                         data={monthlyRevenue}
-                        content={content}
+                        contenlabels={content.status}
                         language={language}
                         viewport={viewport}
                         chartMargin={chartMargin}
@@ -767,7 +669,7 @@ export default function Dashboard() {
                     />
                     <OrdersChart
                         data={monthlyOrders}
-                        content={content}
+                        contenlabels={content.status}
                         viewport={viewport}
                         chartMargin={chartMargin}
                         chartHeight={80}
@@ -782,7 +684,7 @@ export default function Dashboard() {
                     <CardContent>
                         <RecentOrdersTable
                             orders={dashboardData.recent_orders}
-                            content={content}
+                            contenlabels={content.status}
                             language={language}
                         />
                     </CardContent>

@@ -29,7 +29,8 @@ def create_admin(
     db_admin = Admin(
         email=admin_in.email,
         hashed_password=hashed_password,
-        role=admin_in.role
+        role=admin_in.role,
+        must_change_password=True,
     )
     db.add(db_admin)
     db.commit()

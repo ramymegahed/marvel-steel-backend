@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from app.core.dependencies import get_db, get_current_admin
+from app.core.dependencies import get_db, get_current_admin, get_current_super_admin
 from app.models.admin import Admin
 from app.schemas.order import OrderResponse, OrderUpdateStatus
 from app.services import order_service
@@ -32,3 +32,11 @@ def update_order_status(
     current_admin: Admin = Depends(get_current_admin)
 ):
     return order_service.update_order_status(db, order_id=order_id, status_in=status_in)
+
+@router.delete("/{order_id}")
+def delete_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_super_admin)
+):
+    return order_service.delete_order(db, order_id=order_id)

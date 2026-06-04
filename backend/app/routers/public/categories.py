@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.core.dependencies import get_db
 from app.schemas.category import CategoryResponse
-from app.services import product_service
+from app.services import category_service
 
 router = APIRouter()
 
@@ -13,4 +13,4 @@ def get_categories(
     db: Session = Depends(get_db)
 ):
     # Public only sees active categories
-    return product_service.get_categories(db, skip=skip, limit=limit, active_only=True)
+    return category_service.get_categories(db, skip=skip, limit=limit, active_only=True)

@@ -4,74 +4,11 @@ import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useAdmin } from '../../Components/Context/AdminContext';
 import { BASE_URL } from '../../App';
 import { apiFetch } from '../../utils/apiClient';
+import { Card, CardHeader, CardTitle, CardContent } from '../../Components/Admin/Card';
+import StatusBadge from '../../Components/Admin/StatusBadge';
+import { formatCurrency, formatDate } from '../../utils/adminUtils';
+import useViewport from '../../hooks/useViewport';
 
-// ─── Shared UI Components ─────────────────────────────────────────────────────
-const Card = ({ children, className = '' }) => (
-    <div className={`bg-white rounded-xl shadow-sm border border-[#2C2C2C]/10 ${className}`}>
-        {children}
-    </div>
-);
-
-const CardHeader = ({ children }) => (
-    <div className="p-6 pb-0">{children}</div>
-);
-
-const CardTitle = ({ children }) => (
-    <h3 className="text-lg font-semibold text-[#2C2C2C]" style={{ fontFamily: 'Playfair Display, serif' }}>
-        {children}
-    </h3>
-);
-
-const CardContent = ({ children }) => (
-    <div className="p-6 pt-0">{children}</div>
-);
-
-// ─── Helper function to format date ──────────────────────────────────────────
-const formatDate = (dateString, language) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
-
-// ─── Helper function to format currency ──────────────────────────────────────
-const formatCurrency = (amount, language) => {
-    return new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en-US', {
-        style: 'currency',
-        currency: 'EGP',
-        minimumFractionDigits: 2
-    }).format(amount);
-};
-
-// ─── Status Badge Component ──────────────────────────────────────────────────
-const StatusBadge = ({ status, t }) => {
-    const getStatusColor = () => {
-        switch (status.toLowerCase()) {
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-            case 'confirmed':
-                return 'bg-blue-100 text-blue-800 border-blue-200';
-            case 'in_delivery':
-                return 'bg-purple-100 text-purple-800 border-purple-200';
-            case 'delivered':
-                return 'bg-green-100 text-green-800 border-green-200';
-            case 'cancelled':
-                return 'bg-red-100 text-red-800 border-red-200';
-            default:
-                return 'bg-gray-100 text-gray-800 border-gray-200';
-        }
-    };
-
-    return (
-        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor()}`}>
-            {t.status[status.toLowerCase()] || status}
-        </span>
-    );
-};
 
 // ─── Delete Confirmation Modal ───────────────────────────────────────────────
 const DeleteConfirmationModal = ({
@@ -644,6 +581,9 @@ export default function AdminOrders() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [orderToDelete, setOrderToDelete] = useState(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     // Pagination
     const [pagination, setPagination] = useState({
@@ -867,7 +807,7 @@ export default function AdminOrders() {
         } finally {
             setLoading(false);
         }
-    }, [apiFetch]);
+    }, []);
 
     // ─── Fetch Single Order ────────────────────────────────────────────────────
     const fetchOrderById = useCallback(async (orderId) => {
@@ -878,7 +818,7 @@ export default function AdminOrders() {
             console.error('Error fetching order:', err);
             throw err;
         }
-    }, [apiFetch]);
+    }, []);
 
     // ─── Update Order Status ───────────────────────────────────────────────────
     const updateOrderStatus = useCallback(async (orderId, status) => {
@@ -903,12 +843,21 @@ export default function AdminOrders() {
             console.error('Error updating order status:', err);
             throw err;
         }
-    }, [apiFetch, selectedOrder]);
+    }, [selectedOrder]);
 
     // Initial fetch
     useEffect(() => {
         fetchOrders(0, pagination.limit, false);
     }, []);
+
+    // ─── Auto-refresh every 60 s (only when not searching to avoid disrupting results) ──
+    useEffect(() => {
+        if (searchTerm) return;
+        const id = setInterval(() => {
+            fetchOrders(0, pagination.limit, false, '');
+        }, 60_000);
+        return () => clearInterval(id);
+    }, [searchTerm, fetchOrders, pagination.limit]);
 
     // ─── Search with debounce ──────────────────────────────────────────────────
     useEffect(() => {
@@ -943,12 +892,31 @@ export default function AdminOrders() {
         setSelectedOrder(null);
     }, []);
 
+    // ─── Delete Order ──────────────────────────────────────────────────────────
+    const handleDeleteClick = useCallback((order, e) => {
+        e.stopPropagation();
+        setOrderToDelete(order);
+        setIsDeleteModalOpen(true);
+    }, []);
+
+    const handleConfirmDelete = useCallback(async () => {
+        if (!orderToDelete) return;
+        setDeleteLoading(true);
+        try {
+            await apiFetch(`/api/v1/admin/orders/${orderToDelete.id}`, { method: 'DELETE' });
+            setOrders(prev => prev.filter(o => o.id !== orderToDelete.id));
+            setIsDeleteModalOpen(false);
+            setOrderToDelete(null);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setDeleteLoading(false);
+        }
+    }, [orderToDelete]);
+
     // ─── Filtered Orders (already filtered by API) ─────────────────────────────
     const filteredOrders = orders;
 
-    // ─── Pagination Calculations ───────────────────────────────────────────────
-    const totalPages = Math.ceil(filteredOrders.length / pagination.limit);
-    const startIndex = pagination.skip - pagination.limit + 1;
     const currentOrders = filteredOrders;
 
     // ─── Responsive Classes ────────────────────────────────────────────────────
@@ -983,6 +951,17 @@ export default function AdminOrders() {
                 loading={loading}
                 t={t}
                 language={language}
+                rtlStyles={rtlStyles}
+            />
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => { setIsDeleteModalOpen(false); setOrderToDelete(null); }}
+                onConfirm={handleConfirmDelete}
+                itemName={orderToDelete ? `#${orderToDelete.id} — ${orderToDelete.customer_name}` : ''}
+                loading={deleteLoading}
+                t={t}
                 rtlStyles={rtlStyles}
             />
 
@@ -1050,7 +1029,7 @@ export default function AdminOrders() {
                                                 <p className="text-sm font-medium text-[#2C2C2C]">#{order.id}</p>
                                                 <p className="text-xs text-[#2C2C2C]/70 mt-1">{order.customer_name}</p>
                                             </div>
-                                            <StatusBadge status={order.status} t={t} />
+                                            <StatusBadge status={order.status} labels={t.status} />
                                         </div>
 
                                         <div className="space-y-2 mb-3">
@@ -1059,13 +1038,22 @@ export default function AdminOrders() {
                                             <p className="text-xs text-[#2C2C2C]/70">{formatDate(order.created_at, language)}</p>
                                         </div>
 
-                                        <button
-                                            onClick={() => handleViewOrder(order)}
-                                            className="w-full py-2 rounded-lg bg-[#8B5E3C]/10 hover:bg-[#8B5E3C]/20 transition-colors text-[#8B5E3C] text-sm flex items-center justify-center gap-2"
-                                        >
-                                            <Eye className="w-4 h-4" />
-                                            {t.view}
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleViewOrder(order)}
+                                                className="flex-1 py-2 rounded-lg bg-[#8B5E3C]/10 hover:bg-[#8B5E3C]/20 transition-colors text-[#8B5E3C] text-sm flex items-center justify-center gap-2"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                                {t.view}
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDeleteClick(order, e)}
+                                                className="w-10 h-10 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center shrink-0"
+                                                title={t.delete}
+                                            >
+                                                <Trash2 className="w-4 h-4 text-red-500" />
+                                            </button>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             ))
@@ -1120,19 +1108,28 @@ export default function AdminOrders() {
                                                     <td className="py-3 px-4 text-sm text-[#2C2C2C]">{order.phone}</td>
                                                     <td className="py-3 px-4 text-sm text-[#2C2C2C] font-medium">{formatCurrency(order.total_price, language)}</td>
                                                     <td className="py-3 px-4">
-                                                        <StatusBadge status={order.status} t={t} />
+                                                        <StatusBadge status={order.status} labels={t.status} />
                                                     </td>
                                                     <td className="py-3 px-4 text-sm text-[#2C2C2C]/70">
                                                         {formatDate(order.created_at, language)}
                                                     </td>
                                                     <td className="py-3 px-4">
-                                                        <button
-                                                            onClick={() => handleViewOrder(order)}
-                                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#8B5E3C]/10 hover:bg-[#8B5E3C]/20 transition-colors text-[#8B5E3C] text-sm"
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                            {t.view}
-                                                        </button>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => handleViewOrder(order)}
+                                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#8B5E3C]/10 hover:bg-[#8B5E3C]/20 transition-colors text-[#8B5E3C] text-sm"
+                                                            >
+                                                                <Eye className="w-4 h-4" />
+                                                                {t.view}
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => handleDeleteClick(order, e)}
+                                                                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
+                                                                title={t.delete}
+                                                            >
+                                                                <Trash2 className="w-4 h-4 text-red-500" />
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))

@@ -1,7 +1,10 @@
+import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from fastapi import FastAPI
 from app.database import SessionLocal
 from app.models.admin import Admin, AdminRole
+from app.models.revoked_token import RevokedToken
 from app.core.security import get_password_hash
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -33,31 +36,72 @@ from app.routers.public import cart as public_cart
 from app.routers.public import checkout as public_checkout
 from app.routers.public import settings as public_settings
 
+FALLBACK_SECRET = "fallback-secret-for-local-dev-only"
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if settings.SECRET_KEY == FALLBACK_SECRET:
+        raise RuntimeError(
+            "SECRET_KEY is not set. Set a strong random value in your .env file. "
+            "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+        )
+
     db = SessionLocal()
     try:
-        # Check if any admin exists
         if db.query(Admin).count() == 0:
-            print("No admins found in database. Creating default Super Admin...")
+            print("No admins found. Creating default Super Admin (password change required on first login)...")
             default_email = "admin@marvelsteel.com"
             default_password = "Admin123456"
             hashed_password = get_password_hash(default_password)
             new_admin = Admin(
                 email=default_email,
                 hashed_password=hashed_password,
-                role=AdminRole.super_admin
+                role=AdminRole.super_admin,
+                must_change_password=True,
             )
             db.add(new_admin)
             db.commit()
-            print(f"Successfully created default Super Admin: {default_email}")
+            print(f"Default Super Admin created: {default_email} — must change password on first login.")
     except Exception as e:
         print(f"Failed to create default Super Admin on startup: {e}")
         db.rollback()
     finally:
         db.close()
-    
+
+    # Run startup cleanup then repeat daily in background
+    _run_cleanup()
+    task = asyncio.create_task(_daily_cleanup_loop())
+
     yield
+
+    task.cancel()
+
+
+def _run_cleanup():
+    db = SessionLocal()
+    try:
+        from app.services.cart_service import cleanup_abandoned_carts
+        count = cleanup_abandoned_carts(db)
+        if count:
+            print(f"Startup cleanup: removed {count} abandoned cart(s)")
+
+        # Purge expired revoked tokens so the table doesn't grow unboundedly
+        now = datetime.now(timezone.utc)
+        purged = db.query(RevokedToken).filter(RevokedToken.expires_at < now).delete()
+        if purged:
+            print(f"Startup cleanup: purged {purged} expired revoked token(s)")
+        db.commit()
+    except Exception as e:
+        print(f"Startup cleanup error: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+async def _daily_cleanup_loop():
+    while True:
+        await asyncio.sleep(24 * 60 * 60)
+        _run_cleanup()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

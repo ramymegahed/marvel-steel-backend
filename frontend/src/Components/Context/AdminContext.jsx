@@ -1,6 +1,18 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { BASE_URL } from '../../App';
+
+/** Decode the `exp` claim from a JWT without verifying the signature. */
+function getTokenExpiry(token) {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp ? payload.exp * 1000 : null; // convert to ms
+    } catch {
+        return null;
+    }
+}
+
+const WARN_BEFORE_MS = 15 * 60 * 1000; // show warning 15 min before expiry
 
 const AdminContext = createContext();
 
@@ -16,6 +28,44 @@ export const AdminProvider = ({ children }) => {
     const [admin, setAdmin] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [mustChangePassword, setMustChangePassword] = useState(false);
+    const [sessionWarning, setSessionWarning] = useState(false); // true when <15 min left
+    const warnTimerRef = useRef(null);
+    const expireTimerRef = useRef(null);
+
+    const _clearExpiryTimers = useCallback(() => {
+        clearTimeout(warnTimerRef.current);
+        clearTimeout(expireTimerRef.current);
+    }, []);
+
+    const _scheduleExpiryTimers = useCallback((token) => {
+        _clearExpiryTimers();
+        const expiresAt = getTokenExpiry(token);
+        if (!expiresAt) return;
+        const now = Date.now();
+        const warnIn = expiresAt - now - WARN_BEFORE_MS;
+        const expireIn = expiresAt - now;
+
+        if (warnIn > 0) {
+            warnTimerRef.current = setTimeout(() => setSessionWarning(true), warnIn);
+        } else {
+            setSessionWarning(true); // already in the warning window
+        }
+        if (expireIn > 0) {
+            expireTimerRef.current = setTimeout(() => {
+                // Token expired — force client-side logout
+                localStorage.removeItem('admin');
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminAuth');
+                localStorage.removeItem('adminEmail');
+                setAdmin(null);
+                setIsAuthenticated(false);
+                setMustChangePassword(false);
+                setSessionWarning(false);
+                window.location.href = '/admin/login';
+            }, expireIn);
+        }
+    }, [_clearExpiryTimers]);
 
     useEffect(() => {
         const checkAuth = () => {
@@ -24,10 +74,20 @@ export const AdminProvider = ({ children }) => {
 
             if (storedAdmin && token) {
                 try {
-                    setAdmin(JSON.parse(storedAdmin));
-                    setIsAuthenticated(true);
+                    const expiry = getTokenExpiry(token);
+                    if (expiry && expiry < Date.now()) {
+                        // Token already expired — clear immediately
+                        localStorage.removeItem('admin');
+                        localStorage.removeItem('adminToken');
+                        localStorage.removeItem('adminAuth');
+                    } else {
+                        const parsed = JSON.parse(storedAdmin);
+                        setAdmin(parsed);
+                        setIsAuthenticated(true);
+                        setMustChangePassword(parsed.must_change_password === true);
+                        _scheduleExpiryTimers(token);
+                    }
                 } catch {
-                    // Corrupted data — clear it
                     localStorage.removeItem('admin');
                     localStorage.removeItem('adminToken');
                     localStorage.removeItem('adminAuth');
@@ -37,7 +97,8 @@ export const AdminProvider = ({ children }) => {
         };
 
         checkAuth();
-    }, []);
+        return () => _clearExpiryTimers();
+    }, [_scheduleExpiryTimers, _clearExpiryTimers]);
 
     const login = async (credentials) => {
         try {
@@ -71,6 +132,9 @@ export const AdminProvider = ({ children }) => {
 
             setAdmin(adminData);
             setIsAuthenticated(true);
+            setMustChangePassword(adminData.must_change_password === true);
+            setSessionWarning(false);
+            _scheduleExpiryTimers(token);
 
             return { success: true, data: adminData };
         } catch (error) {
@@ -111,6 +175,23 @@ export const AdminProvider = ({ children }) => {
 
             setAdmin(null);
             setIsAuthenticated(false);
+            setMustChangePassword(false);
+            setSessionWarning(false);
+            _clearExpiryTimers();
+        }
+    };
+
+    const clearMustChangePassword = () => {
+        setMustChangePassword(false);
+        const stored = localStorage.getItem('admin');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                parsed.must_change_password = false;
+                localStorage.setItem('admin', JSON.stringify(parsed));
+            } catch {
+                // ignore
+            }
         }
     };
 
@@ -127,9 +208,12 @@ export const AdminProvider = ({ children }) => {
         admin,
         loading,
         isAuthenticated,
+        mustChangePassword,
+        sessionWarning,
         login,
         logout,
         getAuthHeaders,
+        clearMustChangePassword,
     };
 
     return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;

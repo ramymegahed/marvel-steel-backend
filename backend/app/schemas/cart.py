@@ -21,7 +21,9 @@ class CartItemResponse(CartItemBase):
     item_price: float
     subtotal: float
     added_at: datetime
-    
+    is_available: bool = True
+    product_image_url: Optional[str] = None
+
     class Config:
         from_attributes = True
 

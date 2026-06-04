@@ -25,6 +25,7 @@ from app.models.product import Product, ProductImage, ProductSize
 from app.models.order import Order, OrderItem
 from app.models.site_settings import SiteSettings, Review
 from app.models.cart import Cart, CartItem
+from app.models.revoked_token import RevokedToken
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

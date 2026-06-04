@@ -29,6 +29,7 @@ class SiteSettingsBase(BaseModel):
     whatsapp_number: Optional[str] = None
     delivery_time: Optional[str] = None
     order_confirmation_message: Optional[str] = None
+    shipping_fee: Optional[float] = 0.0
 
 class SiteSettingsUpdate(SiteSettingsBase):
     pass
@@ -45,6 +46,9 @@ class PublicSettingsResponse(BaseModel):
     whatsapp_number: Optional[str] = None
     delivery_time: Optional[str] = None
     order_confirmation_message: Optional[str] = None
+    vodafone_cash_number: Optional[str] = None
+    instapay_number: Optional[str] = None
+    shipping_fee: Optional[float] = 0.0
 
     class Config:
         from_attributes = True

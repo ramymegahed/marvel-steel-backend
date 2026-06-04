@@ -8,17 +8,10 @@ import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useAdmin } from '../../Components/Context/AdminContext';
 import { BASE_URL } from '../../App';
 import { apiFetch } from '../../utils/apiClient';
-
-// ─── Shared UI Components ─────────────────────────────────────────────────────
-const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl shadow-sm border border-[#2C2C2C]/10 ${className}`}>
-    {children}
-  </div>
-);
-
-const CardContent = ({ children, className = '' }) => (
-  <div className={`p-6 pt-0 ${className}`}>{children}</div>
-);
+import { Card, CardHeader, CardTitle, CardContent } from '../../Components/Admin/Card';
+import StatusBadge from '../../Components/Admin/StatusBadge';
+import { formatCurrency, formatDate } from '../../utils/adminUtils';
+import useViewport from '../../hooks/useViewport';
 
 // ─── Helper function to get full image URL (UPDATED with better handling) ─────
 const getFullImageUrl = (imagePath) => {
@@ -374,7 +367,13 @@ const SizesModal = ({
     name: '',
     price: '',
     discount_price: '',
-    stock_quantity: ''
+    stock_quantity: '',
+    bed_size: '',
+    metal_color: '',
+    slats_type: '',
+    cushion_color: '',
+    rope_color: '',
+    umbrella_color: '',
   });
   const [loading, setLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -410,12 +409,18 @@ const SizesModal = ({
 
     setLoading(true);
     try {
-      // Convert empty strings to 0 for API
       const submitData = {
         name: sizeForm.name,
         price: sizeForm.price === '' ? 0 : Number(sizeForm.price),
-        discount_price: sizeForm.discount_price === '' ? 0 : Number(sizeForm.discount_price),
-        stock_quantity: sizeForm.stock_quantity === '' ? 0 : Number(sizeForm.stock_quantity)
+        // null means "no discount" — sending 0 would override the real price with free
+        discount_price: sizeForm.discount_price === '' ? null : Number(sizeForm.discount_price),
+        stock_quantity: sizeForm.stock_quantity === '' ? 0 : Number(sizeForm.stock_quantity),
+        bed_size: sizeForm.bed_size || null,
+        metal_color: sizeForm.metal_color || null,
+        slats_type: sizeForm.slats_type || null,
+        cushion_color: sizeForm.cushion_color || null,
+        rope_color: sizeForm.rope_color || null,
+        umbrella_color: sizeForm.umbrella_color || null,
       };
 
       if (editingSize) {
@@ -425,7 +430,7 @@ const SizesModal = ({
       }
       setIsAdding(false);
       setEditingSize(null);
-      setSizeForm({ name: '', price: '', discount_price: '', stock_quantity: '' });
+      setSizeForm({ name: '', price: '', discount_price: '', stock_quantity: '', bed_size: '', metal_color: '', slats_type: '', cushion_color: '', rope_color: '', umbrella_color: '' });
       setFormErrors({});
     } catch (error) {
       console.error('Error saving size:', error);
@@ -440,7 +445,13 @@ const SizesModal = ({
       name: size.name,
       price: size.price?.toString() || '',
       discount_price: size.discount_price?.toString() || '',
-      stock_quantity: size.stock_quantity?.toString() || ''
+      stock_quantity: size.stock_quantity?.toString() || '',
+      bed_size: size.bed_size || '',
+      metal_color: size.metal_color || '',
+      slats_type: size.slats_type || '',
+      cushion_color: size.cushion_color || '',
+      rope_color: size.rope_color || '',
+      umbrella_color: size.umbrella_color || '',
     });
     setIsAdding(true);
     setFormErrors({});
@@ -449,7 +460,7 @@ const SizesModal = ({
   const handleCancel = () => {
     setIsAdding(false);
     setEditingSize(null);
-    setSizeForm({ name: '', price: '', discount_price: '', stock_quantity: '' });
+    setSizeForm({ name: '', price: '', discount_price: '', stock_quantity: '', bed_size: '', metal_color: '', slats_type: '', cushion_color: '', rope_color: '', umbrella_color: '' });
     setFormErrors({});
   };
 
@@ -490,7 +501,8 @@ const SizesModal = ({
 
           {/* Size Form */}
           {isAdding && (
-            <form onSubmit={handleSubmit} className="mb-6 p-4 bg-[#F5F1E8] rounded-lg">
+            <form onSubmit={handleSubmit} className="mb-6 p-4 bg-[#F5F1E8] rounded-lg space-y-4">
+              <p className="text-xs font-semibold text-[#2C2C2C]/60 uppercase tracking-wide">{language === 'ar' ? 'السعر والمخزون' : 'Pricing & Stock'}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="col-span-1">
                   <label className="text-xs text-[#2C2C2C]/70 mb-1 block">
@@ -564,7 +576,31 @@ const SizesModal = ({
                   )}
                 </div>
               </div>
-              <div className="flex justify-end gap-2 mt-4">
+              <p className="text-xs font-semibold text-[#2C2C2C]/60 uppercase tracking-wide pt-2">{language === 'ar' ? 'خصائص المنتج (اختياري)' : 'Variation Attributes (optional)'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { field: 'bed_size',      label: language === 'ar' ? 'مقاس السرير'  : 'Bed Size',      placeholder: language === 'ar' ? 'مثال: 100 سم' : 'e.g. 100 cm' },
+                  { field: 'metal_color',   label: language === 'ar' ? 'لون المعدن'   : 'Metal Color',   placeholder: language === 'ar' ? 'مثال: أسود'   : 'e.g. Black' },
+                  { field: 'slats_type',    label: language === 'ar' ? 'نوع الملل'    : 'Slats Type',    placeholder: language === 'ar' ? 'مثال: خشب'    : 'e.g. Wood'  },
+                  { field: 'cushion_color', label: language === 'ar' ? 'لون الوسادة'  : 'Cushion Color', placeholder: language === 'ar' ? 'مثال: بيج'    : 'e.g. Beige' },
+                  { field: 'rope_color',    label: language === 'ar' ? 'لون الحبل'    : 'Rope Color',    placeholder: language === 'ar' ? 'مثال: بيج'    : 'e.g. Beige' },
+                  { field: 'umbrella_color',label: language === 'ar' ? 'لون المظلة'   : 'Umbrella Color',placeholder: language === 'ar' ? 'مثال: أحمر'   : 'e.g. Red'   },
+                ].map(({ field, label, placeholder }) => (
+                  <div key={field}>
+                    <label className="text-xs text-[#2C2C2C]/70 mb-1 block">{label}</label>
+                    <input
+                      type="text"
+                      value={sizeForm[field]}
+                      onChange={(e) => handleInputChange(field, e.target.value)}
+                      placeholder={placeholder}
+                      dir={language === 'ar' ? 'rtl' : 'ltr'}
+                      className="w-full h-9 px-3 rounded-lg bg-white border border-[#2C2C2C]/10 focus:outline-none focus:border-[#8B5E3C] text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={handleCancel}
@@ -911,6 +947,25 @@ const ProductCard = React.memo(({ product, t, language, onEdit, onDelete, onMana
             </p>
           </div>
 
+          {/* Price range */}
+          {product.sizes?.length > 0 && (() => {
+            const prices = product.sizes.map(s =>
+              (s.discount_price && s.discount_price > 0) ? s.discount_price : s.price
+            );
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            return (
+              <div className="p-2 bg-[#8B5E3C]/10 rounded-lg shrink-0">
+                <p className="text-xs text-[#8B5E3C]/70">{t.price}</p>
+                <p className="font-semibold text-[#8B5E3C] text-sm">
+                  {minPrice === maxPrice
+                    ? `EGP ${minPrice.toLocaleString()}`
+                    : `EGP ${minPrice.toLocaleString()} – ${maxPrice.toLocaleString()}`}
+                </p>
+              </div>
+            );
+          })()}
+
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2 text-sm shrink-0">
             <div className="p-2 bg-[#F5F1E8] rounded-lg">
@@ -1077,7 +1132,6 @@ export default function AdminProducts() {
       additionalPrice: 'Price',
       stockQuantity: 'Stock Quantity',
       noSizes: 'No sizes added',
-      manageSizes: 'Manage Sizes',
       totalStock: 'Total Stock',
       yes: 'Yes, Delete',
       no: 'No, Cancel',
@@ -1149,7 +1203,6 @@ export default function AdminProducts() {
       additionalPrice: 'السعر',
       stockQuantity: 'كمية المخزون',
       noSizes: 'لم تتم إضافة مقاسات',
-      manageSizes: 'إدارة المقاسات',
       totalStock: 'إجمالي المخزون',
       yes: 'نعم، احذف',
       no: 'لا، إلغاء',
@@ -1315,10 +1368,20 @@ export default function AdminProducts() {
     setModalImages(prev => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleModalSetMainImage = useCallback((index) => {
-    // This would be implemented when sending to server
-    console.log('Set main image:', index);
-  }, []);
+  const handleModalSetMainImage = useCallback(async (index) => {
+    if (!selectedProduct) return;
+    const image = modalImages[index];
+    // Only persisted images (not File objects) have an id to set as main
+    if (image instanceof File) return;
+    try {
+      await apiFetch(`/api/v1/admin/products/${selectedProduct.id}/images/${image.id}/set-main`, { method: 'PUT' });
+      setModalImages(prev => prev.map((img, i) =>
+        img instanceof File ? img : { ...img, is_main: i === index }
+      ));
+    } catch (err) {
+      console.error('Error setting main image:', err);
+    }
+  }, [selectedProduct, apiFetch, modalImages]);
 
   // ─── Add Product ───────────────────────────────────────────────────────────
   const handleAddProduct = async (e) => {

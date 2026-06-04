@@ -13,6 +13,21 @@ adminApi.interceptors.request.use((config) => {
   return config;
 });
 
+// On 401: clear session and redirect to login
+adminApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('admin');
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminAuth');
+      localStorage.removeItem('adminEmail');
+      window.location.href = '/admin/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 /**
  * Drop-in replacement for the duplicated `apiFetch` helper in every admin page.
  *
@@ -24,7 +39,10 @@ adminApi.interceptors.request.use((config) => {
  */
 export async function apiFetch(path, options = {}) {
   const token = localStorage.getItem('adminToken');
-  if (!token) throw new Error('Not authenticated');
+  if (!token) {
+    window.location.href = '/admin/login';
+    throw new Error('Not authenticated');
+  }
 
   const { body, method = 'GET', headers: extraHeaders = {}, ...rest } = options;
 
