@@ -28,7 +28,6 @@ export const AdminProvider = ({ children }) => {
     const [admin, setAdmin] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [mustChangePassword, setMustChangePassword] = useState(false);
     const [sessionWarning, setSessionWarning] = useState(false); // true when <15 min left
     const warnTimerRef = useRef(null);
     const expireTimerRef = useRef(null);
@@ -60,7 +59,6 @@ export const AdminProvider = ({ children }) => {
                 localStorage.removeItem('adminEmail');
                 setAdmin(null);
                 setIsAuthenticated(false);
-                setMustChangePassword(false);
                 setSessionWarning(false);
                 window.location.href = '/admin/login';
             }, expireIn);
@@ -84,7 +82,6 @@ export const AdminProvider = ({ children }) => {
                         const parsed = JSON.parse(storedAdmin);
                         setAdmin(parsed);
                         setIsAuthenticated(true);
-                        setMustChangePassword(parsed.must_change_password === true);
                         _scheduleExpiryTimers(token);
                     }
                 } catch {
@@ -132,7 +129,6 @@ export const AdminProvider = ({ children }) => {
 
             setAdmin(adminData);
             setIsAuthenticated(true);
-            setMustChangePassword(adminData.must_change_password === true);
             setSessionWarning(false);
             _scheduleExpiryTimers(token);
 
@@ -175,23 +171,8 @@ export const AdminProvider = ({ children }) => {
 
             setAdmin(null);
             setIsAuthenticated(false);
-            setMustChangePassword(false);
             setSessionWarning(false);
             _clearExpiryTimers();
-        }
-    };
-
-    const clearMustChangePassword = () => {
-        setMustChangePassword(false);
-        const stored = localStorage.getItem('admin');
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                parsed.must_change_password = false;
-                localStorage.setItem('admin', JSON.stringify(parsed));
-            } catch {
-                // ignore
-            }
         }
     };
 
@@ -208,12 +189,10 @@ export const AdminProvider = ({ children }) => {
         admin,
         loading,
         isAuthenticated,
-        mustChangePassword,
         sessionWarning,
         login,
         logout,
         getAuthHeaders,
-        clearMustChangePassword,
     };
 
     return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;

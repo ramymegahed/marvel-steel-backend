@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         if db.query(Admin).count() == 0:
-            print("No admins found. Creating default Super Admin (password change required on first login)...")
+            print("No admins found. Creating default Super Admin...")
             default_email = "admin@marvelsteel.com"
             default_password = "Admin123456"
             hashed_password = get_password_hash(default_password)
@@ -57,11 +57,11 @@ async def lifespan(app: FastAPI):
                 email=default_email,
                 hashed_password=hashed_password,
                 role=AdminRole.super_admin,
-                must_change_password=True,
+                must_change_password=False,
             )
             db.add(new_admin)
             db.commit()
-            print(f"Default Super Admin created: {default_email} — must change password on first login.")
+            print(f"Default Super Admin created: {default_email}")
     except Exception as e:
         print(f"Failed to create default Super Admin on startup: {e}")
         db.rollback()

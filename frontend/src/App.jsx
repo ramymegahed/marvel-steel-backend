@@ -25,8 +25,6 @@ import AdminStaff from "./Pages/Admin/AdminStaff";
 import AdminReviews from "./Pages/Admin/AdminReviews";
 import AdminSettings from "./Pages/Admin/AdminSettings";
 import AdminLogin from "./Pages/Admin/AdminLogin";
-import ChangePassword from "./Pages/Admin/ChangePassword";
-
 import AdminProtectedRoute from "./Routes/AdminProtectedRoute";
 
 import { LanguageProvider } from "./Components/Context/LanguageContext";
@@ -54,15 +52,6 @@ const routers = createBrowserRouter([
   {
     path: "/admin/login",
     element: <AdminLogin />,
-  },
-
-  {
-    path: "/admin/change-password",
-    element: (
-      <AdminProtectedRoute>
-        <ChangePassword />
-      </AdminProtectedRoute>
-    ),
   },
 
   {

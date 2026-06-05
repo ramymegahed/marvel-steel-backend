@@ -1,15 +1,13 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
-from app.core.dependencies import get_db, get_current_admin, oauth2_scheme
+from app.core.dependencies import get_db, oauth2_scheme
 from app.core.config import settings
-from app.models.admin import Admin
 from app.models.revoked_token import RevokedToken
 from app.services import auth_service
-from app.schemas.admin import Token, ChangePasswordRequest, AdminResponse
-from app.core.security import verify_password, get_password_hash
+from app.schemas.admin import Token
 from app.core.limiter import limiter
 
 router = APIRouter()
@@ -40,21 +38,3 @@ def logout(
         pass  # expired/invalid token — no need to blacklist
     return {"message": "Successfully logged out"}
 
-@router.post("/change-password", response_model=AdminResponse)
-def change_password(
-    payload: ChangePasswordRequest,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
-):
-    if not verify_password(payload.current_password, current_admin.hashed_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
-    if len(payload.new_password) < 8:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password must be at least 8 characters")
-    if payload.new_password == payload.current_password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password must differ from current password")
-
-    current_admin.hashed_password = get_password_hash(payload.new_password)
-    current_admin.must_change_password = False
-    db.commit()
-    db.refresh(current_admin)
-    return current_admin

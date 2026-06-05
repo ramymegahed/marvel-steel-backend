@@ -34,11 +34,7 @@ export default function AdminLogin() {
 
                 if (result.success) {
                     localStorage.setItem('adminEmail', values.username);
-                    if (result.data?.must_change_password) {
-                        navigate('/admin/change-password');
-                    } else {
-                        navigate('/admin');
-                    }
+                    navigate('/admin');
                 } else {
                     setFieldError('general', result.error);
                 }

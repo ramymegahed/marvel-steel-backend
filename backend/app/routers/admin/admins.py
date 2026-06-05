@@ -30,7 +30,7 @@ def create_admin(
         email=admin_in.email,
         hashed_password=hashed_password,
         role=admin_in.role,
-        must_change_password=True,
+        must_change_password=False,
     )
     db.add(db_admin)
     db.commit()

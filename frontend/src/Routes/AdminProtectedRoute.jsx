@@ -1,10 +1,9 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAdmin } from '../Components/Context/AdminContext';
 
 export default function AdminProtectedRoute({ children }) {
-    const { isAuthenticated, loading, mustChangePassword } = useAdmin();
-    const location = useLocation();
+    const { isAuthenticated, loading } = useAdmin();
 
     if (loading) {
         return (
@@ -16,10 +15,6 @@ export default function AdminProtectedRoute({ children }) {
 
     if (!isAuthenticated) {
         return <Navigate to="/admin/login" replace />;
-    }
-
-    if (mustChangePassword && location.pathname !== '/admin/change-password') {
-        return <Navigate to="/admin/change-password" replace />;
     }
 
     return children;
