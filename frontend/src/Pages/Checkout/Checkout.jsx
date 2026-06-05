@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Loader, Package, AlertTriangle, Smartphone, CreditCard, Wallet } from 'lucide-react';
 import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useCart } from '../../Components/Context/Cartcontext';
-import { BASE_URL } from '../../App';
+import { BASE_URL } from '../../config';
 import { publicApi } from '../../utils/apiClient';
 
 // ─── Constants ─────────────────────────────────────────────────────────────

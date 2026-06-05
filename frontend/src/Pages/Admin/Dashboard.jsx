@@ -13,12 +13,13 @@ import {
 } from 'recharts';
 import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useAdmin } from '../../Components/Context/AdminContext';
-import { BASE_URL } from '../../App';
 import { apiFetch } from '../../utils/apiClient';
 import { Card, CardHeader, CardTitle, CardContent } from '../../Components/Admin/Card';
 import StatusBadge from '../../Components/Admin/StatusBadge';
 import { formatCurrency, formatDate } from '../../utils/adminUtils';
-import useViewport from '../../hooks/useViewport';
+
+const MOBILE_BREAKPOINT = 768;
+const TABLET_BREAKPOINT = 1024;
 
 // ─── Stat Card Component ───────────────────────────────────────────────────
 const StatCard = React.memo(({ stat, content, language }) => {
@@ -492,7 +493,7 @@ export default function Dashboard() {
 
     // ─── Loading State ─────────────────────────────────────────────────────────
     if (loading) {
-        return <LoadingState contenlabels={content.status} />;
+        return <LoadingState content={content} />;
     }
 
     // ─── Error State ───────────────────────────────────────────────────────────
@@ -500,7 +501,7 @@ export default function Dashboard() {
         return (
             <ErrorState
                 error={error}
-                contenlabels={content.status}
+                content={content}
                 onRetry={fetchDashboardData}
             />
         );
@@ -525,7 +526,7 @@ export default function Dashboard() {
                             <StatCard
                                 key={stat.id}
                                 stat={stat}
-                                contenlabels={content.status}
+                                content={content}
                                 language={language}
                             />
                         ))}
@@ -536,7 +537,7 @@ export default function Dashboard() {
                         {/* Revenue Chart */}
                         <RevenueChart
                             data={monthlyRevenue}
-                            contenlabels={content.status}
+                            content={content}
                             language={language}
                             viewport={viewport}
                             chartMargin={{ top: 5, right: 5, bottom: 20, left: 0 }}
@@ -546,7 +547,7 @@ export default function Dashboard() {
                         {/* Orders Chart */}
                         <OrdersChart
                             data={monthlyOrders}
-                            contenlabels={content.status}
+                            content={content}
                             viewport={viewport}
                             chartMargin={{ top: 5, right: 5, bottom: 20, left: 0 }}
                             chartHeight={64}
@@ -561,7 +562,7 @@ export default function Dashboard() {
                         <CardContent>
                             <MobileRecentOrders
                                 orders={dashboardData.recent_orders}
-                                contenlabels={content.status}
+                                content={content}
                                 language={language}
                             />
                         </CardContent>
@@ -590,7 +591,7 @@ export default function Dashboard() {
                             <StatCard
                                 key={stat.id}
                                 stat={stat}
-                                contenlabels={content.status}
+                                content={content}
                                 language={language}
                             />
                         ))}
@@ -600,7 +601,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 gap-5 mb-6">
                         <RevenueChart
                             data={monthlyRevenue}
-                            contenlabels={content.status}
+                            content={content}
                             language={language}
                             viewport={viewport}
                             chartMargin={chartMargin}
@@ -608,7 +609,7 @@ export default function Dashboard() {
                         />
                         <OrdersChart
                             data={monthlyOrders}
-                            contenlabels={content.status}
+                            content={content}
                             viewport={viewport}
                             chartMargin={chartMargin}
                             chartHeight={64}
@@ -623,7 +624,7 @@ export default function Dashboard() {
                         <CardContent>
                             <RecentOrdersTable
                                 orders={dashboardData.recent_orders}
-                                contenlabels={content.status}
+                                content={content}
                                 language={language}
                             />
                         </CardContent>
@@ -651,7 +652,7 @@ export default function Dashboard() {
                         <StatCard
                             key={stat.id}
                             stat={stat}
-                            contenlabels={content.status}
+                            content={content}
                             language={language}
                         />
                     ))}
@@ -661,7 +662,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                     <RevenueChart
                         data={monthlyRevenue}
-                        contenlabels={content.status}
+                        content={content}
                         language={language}
                         viewport={viewport}
                         chartMargin={chartMargin}
@@ -669,7 +670,7 @@ export default function Dashboard() {
                     />
                     <OrdersChart
                         data={monthlyOrders}
-                        contenlabels={content.status}
+                        content={content}
                         viewport={viewport}
                         chartMargin={chartMargin}
                         chartHeight={80}
@@ -684,7 +685,7 @@ export default function Dashboard() {
                     <CardContent>
                         <RecentOrdersTable
                             orders={dashboardData.recent_orders}
-                            contenlabels={content.status}
+                            content={content}
                             language={language}
                         />
                     </CardContent>

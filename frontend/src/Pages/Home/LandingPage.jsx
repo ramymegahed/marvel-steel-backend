@@ -7,7 +7,7 @@ import {
   Star, ChevronLeft, ChevronRight, Loader, ImageOff
 } from 'lucide-react';
 import { useLanguage } from '../../Components/Context/LanguageContext';
-import { BASE_URL } from '../../App';
+import { BASE_URL } from '../../config';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const MOBILE_BREAKPOINT = 768;

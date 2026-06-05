@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Filter, X, Loader, Package, ImageOff } from 'lucide-react';
 import { useLanguage } from '../../Components/Context/LanguageContext';
-import { BASE_URL } from '../../App';
+import { BASE_URL } from '../../config';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const MOBILE_BREAKPOINT = 768;

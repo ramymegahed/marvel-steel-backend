@@ -1,6 +1,39 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#F5F1E8] flex items-center justify-center p-6">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+            <h1 className="text-2xl text-[#2C2C2C] mb-3" style={{ fontFamily: 'Playfair Display, serif' }}>
+              Something went wrong
+            </h1>
+            <p className="text-sm text-[#2C2C2C]/60 mb-6">
+              {this.state.error?.message || 'An unexpected error occurred.'}
+            </p>
+            <button
+              onClick={() => window.location.href = '/admin'}
+              className="px-6 py-2 bg-[#8B5E3C] text-white rounded-lg hover:bg-[#8B5E3C]/90 transition-colors"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export { BASE_URL } from './config';
 
 import MainLayout from "./Layouts/MainLayout";
@@ -80,13 +113,15 @@ const routers = createBrowserRouter([
 
 function App() {
   return (
-    <LanguageProvider>
-      <AdminProvider>
-        <CartProvider>
-          <RouterProvider router={routers} />
-        </CartProvider>
-      </AdminProvider>
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <AdminProvider>
+          <CartProvider>
+            <RouterProvider router={routers} />
+          </CartProvider>
+        </AdminProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }
 

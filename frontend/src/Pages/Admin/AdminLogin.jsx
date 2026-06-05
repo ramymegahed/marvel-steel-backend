@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { LogIn, Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react';
@@ -9,7 +9,19 @@ import { useAdmin } from '../../Components/Context/AdminContext';
 export default function AdminLogin() {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
-    const { login } = useAdmin();
+    const { login, isAuthenticated, loading } = useAdmin();
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#F5F1E8] flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-[#8B5E3C] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
+
+    if (isAuthenticated) {
+        return <Navigate to="/admin" replace />;
+    }
 
     const formik = useFormik({
         initialValues: {

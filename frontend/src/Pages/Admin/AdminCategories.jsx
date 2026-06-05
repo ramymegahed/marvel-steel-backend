@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Edit2, Trash2, X, FolderTree, Upload, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useAdmin } from '../../Components/Context/AdminContext';
-import { BASE_URL } from '../../App';
+import { BASE_URL } from '../../config';
 import { apiFetch } from '../../utils/apiClient';
 import { Card, CardHeader, CardTitle, CardContent } from '../../Components/Admin/Card';
 import StatusBadge from '../../Components/Admin/StatusBadge';

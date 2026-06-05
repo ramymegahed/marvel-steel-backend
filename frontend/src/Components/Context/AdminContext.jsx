@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { BASE_URL } from '../../App';
+import { BASE_URL } from '../../config';
 
 /** Decode the `exp` claim from a JWT without verifying the signature. */
 function getTokenExpiry(token) {

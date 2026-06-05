@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Facebook, Instagram } from 'lucide-react';
 import { useLanguage } from '../../Components/Context/LanguageContext';
-import { BASE_URL } from '../../App';
+import { BASE_URL } from '../../config';
 
 const CONTACT_CONTENT = {
   en: {

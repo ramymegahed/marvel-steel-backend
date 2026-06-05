@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Trash2, ShoppingBag, Minus, Plus, Loader, Package, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../../Components/Context/LanguageContext';
 import { useCart } from '../../Components/Context/Cartcontext';
-import { BASE_URL } from '../../App';
+import { BASE_URL } from '../../config';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const MOBILE_BREAKPOINT = 768;
